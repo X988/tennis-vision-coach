@@ -1,0 +1,4 @@
+body { margin: 0; overflow: hidden; background: #111; }
+canvas { display: block; }
+.controls { position: absolute; top: 10px; left: 10px; color: white; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 8px; }
+.controls button, .controls select { margin: 4px; }
