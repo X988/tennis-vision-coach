@@ -1,76 +1,118 @@
+import { useEffect, useMemo, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
-import { useState, useRef, useEffect } from 'react';
+import { OrbitControls } from '@react-three/drei';
 import { Scenario } from './engines/Scenario';
+import { PRESETS, ScenarioConfig, simulateRally } from './engines/rally';
 import { Court } from './components/Court';
 import { Ball } from './components/Ball';
 import { Player } from './components/Player';
+import { TrajectoryOverlay } from './components/TrajectoryOverlay';
+import { CameraRig } from './components/CameraRig';
+import { CAMERA_PRESETS, CameraPreset, RATES, STEP } from './components/uiConstants';
+import { SimDriver } from './components/SimDriver';
+import { ControlPanel } from './components/ui/ControlPanel';
+import { PlaybackBar } from './components/ui/PlaybackBar';
+import { useScenarioClock } from './hooks/useScenarioClock';
+
+const DEFAULT_PRESET = PRESETS[0];
 
 export default function App() {
-  const scenario = useRef(new Scenario()).current;
-  const [playing, setPlaying] = useState(false);
-  const [speed, setSpeed] = useState(1);
-  const [cam, setCam] = useState<'top' | 'side' | 'back' | 'free'>('free');
+  const [presetId, setPresetId] = useState<string | null>(DEFAULT_PRESET.id);
+  const [config, setConfig] = useState<ScenarioConfig>(DEFAULT_PRESET.config);
+  const [camera, setCamera] = useState<CameraPreset>('broadcast');
+  const [rate, setRate] = useState(1);
+  const [loop, setLoop] = useState(true);
+  const [showTrajectory, setShowTrajectory] = useState(true);
 
+  const rally = useMemo(() => simulateRally(config), [config]);
+  const [scenario] = useState(() => new Scenario(rally));
+  const clock = useScenarioClock(scenario);
+
+  useEffect(() => scenario.setRally(rally), [scenario, rally]);
   useEffect(() => {
-    scenario.speed = speed;
-  }, [speed]);
+    scenario.rate = rate;
+    scenario.loop = loop;
+  }, [scenario, rate, loop]);
 
-  const togglePlay = () => {
-    if (playing) scenario.pause();
-    else scenario.play();
-    setPlaying(!playing);
+  const choosePreset = (id: string) => {
+    const preset = PRESETS.find((p) => p.id === id);
+    if (!preset) return;
+    setPresetId(id);
+    setConfig(preset.config);
+    scenario.reset();
   };
 
-  const handleStep = () => {
-    scenario.step(0.05);
+  const editConfig = (next: ScenarioConfig) => {
+    setPresetId(null);
+    setConfig(next);
   };
 
-  const handleBounceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const z = parseFloat(e.target.value);
-    scenario.setBouncePoint(2.5, z);
-  };
-
-  const handleSpeedChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const s = parseFloat(e.target.value);
-    scenario.setSpeed(s);
-  };
+  // Keyboard shortcuts.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target && ['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName) && e.key !== ' ') return;
+      const cam = CAMERA_PRESETS.find((c) => c.key === e.key);
+      if (cam) setCamera(cam.id);
+      else if (e.key === ' ') scenario.toggle();
+      else if (e.key === 'ArrowRight') scenario.step(STEP);
+      else if (e.key === 'ArrowLeft') scenario.step(-STEP);
+      else if (e.key === 'r' || e.key === 'R') scenario.reset();
+      else if (e.key === 'c' || e.key === 'C') scenario.step(rally.contact.t - scenario.time);
+      else if (e.key === '+' || e.key === '=') setRate((r) => RATES[Math.min(RATES.indexOf(r) + 1, RATES.length - 1)]);
+      else if (e.key === '-') setRate((r) => RATES[Math.max(RATES.indexOf(r) - 1, 0)]);
+      else return;
+      e.preventDefault();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [scenario, rally]);
 
   return (
-    <>
-      <Canvas shadows>
-        <ambientLight intensity={0.6} />
-        <directionalLight position={[10, 20, 10]} intensity={1} castShadow />
-        {cam === 'top' && <PerspectiveCamera makeDefault position={[0, 25, 0]} fov={50} />}
-        {cam === 'side' && <PerspectiveCamera makeDefault position={[15, 5, 0]} fov={50} />}
-        {cam === 'back' && <PerspectiveCamera makeDefault position={[0, 4, -18]} fov={50} />}
-        {cam === 'free' && <OrbitControls makeDefault />}
-        <Court />
-        <Ball scenario={scenario} />
+    <div className="app">
+      <Canvas shadows camera={{ position: [0, 9, -27], fov: 45, near: 0.05, far: 200 }} className="scene">
+        <color attach="background" args={['#0d1420']} />
+        <fog attach="fog" args={['#0d1420', 45, 90]} />
+        <hemisphereLight args={['#dfefff', '#2a3a2a', 0.6]} />
+        <directionalLight
+          position={[8, 20, -6]}
+          intensity={1.4}
+          castShadow
+          shadow-mapSize={[2048, 2048]}
+          shadow-camera-left={-12}
+          shadow-camera-right={12}
+          shadow-camera-top={16}
+          shadow-camera-bottom={-16}
+        />
+        <OrbitControls makeDefault maxPolarAngle={Math.PI / 2 - 0.02} minDistance={1} maxDistance={70} />
+        <CameraRig preset={camera} scenario={scenario} />
+        <SimDriver scenario={scenario} />
+        <Court surface={config.surface} />
         <Player scenario={scenario} />
-        <gridHelper args={[40, 40]} position={[0, 0, 0]} />
+        <Ball scenario={scenario} />
+        {showTrajectory && <TrajectoryOverlay rally={rally} />}
       </Canvas>
-      <div className="controls">
-        <button onClick={togglePlay}>{playing ? 'Pause' : 'Play'}</button>
-        <button onClick={handleStep}>Step</button>
-        <select value={speed} onChange={(e) => setSpeed(Number(e.target.value))}>
-          <option value={0.25}>0.25x</option>
-          <option value={1}>1x</option>
-        </select>
-        <div>
-          Cam: 
-          <button onClick={() => setCam('top')}>Top</button>
-          <button onClick={() => setCam('side')}>Side</button>
-          <button onClick={() => setCam('back')}>Back</button>
-          <button onClick={() => setCam('free')}>Free</button>
-        </div>
-        <div>
-          Bounce Z: <input type="range" min={-12} max={0} step={0.1} defaultValue={-8} onChange={handleBounceChange} />
-        </div>
-        <div>
-          Ball speed: <input type="range" min={5} max={30} step={1} defaultValue={15} onChange={handleSpeedChange} />
-        </div>
-      </div>
-    </>
+
+      <ControlPanel
+        presetId={presetId}
+        config={config}
+        rally={rally}
+        showTrajectory={showTrajectory}
+        onPreset={choosePreset}
+        onConfig={editConfig}
+        onShowTrajectory={setShowTrajectory}
+      />
+      <PlaybackBar
+        scenario={scenario}
+        rally={rally}
+        clock={clock}
+        rate={rate}
+        loop={loop}
+        camera={camera}
+        onRate={setRate}
+        onLoop={setLoop}
+        onCamera={setCamera}
+      />
+    </div>
   );
 }
