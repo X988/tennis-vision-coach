@@ -1,0 +1,61 @@
+{
+  "id": "FH_BODY_01",
+  "version": 1,
+  "schemaVersion": 1,
+  "title": {
+    "ru": "Форхенд: мяч в корпус",
+    "en": "Forehand: ball into the body"
+  },
+  "description": {
+    "ru": "Мяч летит прямо в игрока. Нужно отступить от мяча, чтобы освободить место для замаха.",
+    "en": "The ball comes straight at the player. Step away from it to make room for the swing."
+  },
+  "surface": "hard",
+  "player": {
+    "handedness": "right",
+    "backhand": "two_handed",
+    "start": {
+      "x": 0.0,
+      "y": -13.0
+    },
+    "level": "intermediate"
+  },
+  "incomingBall": {
+    "speedKmh": 68,
+    "spin": "flat",
+    "bounce": {
+      "x": -0.2,
+      "y": -9.2
+    },
+    "launch": {
+      "x": 0.3,
+      "y": 12.2,
+      "h": 1.2
+    }
+  },
+  "task": {
+    "shot": "forehand",
+    "goal": "neutral"
+  },
+  "learning": {
+    "focus": [
+      "first_step",
+      "footwork",
+      "contact"
+    ],
+    "difficulty": 2,
+    "coachApproved": false,
+    "categories": [
+      "body"
+    ],
+    "decisions": [
+      "first_step",
+      "stance"
+    ],
+    "errorVariant": "too_close",
+    "cameras": [
+      "back",
+      "side"
+    ]
+  }
+}

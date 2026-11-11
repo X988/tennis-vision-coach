@@ -1,0 +1,58 @@
+{
+  "id": "BH_SLOW_HIGH_01",
+  "version": 1,
+  "schemaVersion": 1,
+  "title": {
+    "ru": "Бэкхенд: медленный высокий мяч",
+    "en": "Backhand: slow high ball"
+  },
+  "description": {
+    "ru": "Медленный высокий мяч («свеча» с отскоком выше плеча). Где встретить: раньше, на подъёме, или отойти.",
+    "en": "A slow, high looping ball bouncing above the shoulder. Where to meet it: early on the rise or back."
+  },
+  "surface": "hard",
+  "player": {
+    "handedness": "right",
+    "backhand": "two_handed",
+    "start": {
+      "x": 0.0,
+      "y": -13.0
+    },
+    "level": "intermediate"
+  },
+  "incomingBall": {
+    "speedKmh": 52,
+    "spin": "topspin",
+    "bounce": {
+      "x": -1.4,
+      "y": -9.8
+    },
+    "apexM": 3.7
+  },
+  "task": {
+    "shot": "backhand",
+    "goal": "neutral"
+  },
+  "learning": {
+    "focus": [
+      "footwork",
+      "stance",
+      "contact"
+    ],
+    "difficulty": 3,
+    "coachApproved": false,
+    "categories": [
+      "slow",
+      "high"
+    ],
+    "decisions": [
+      "position",
+      "stance"
+    ],
+    "errorVariant": "wrong_stance",
+    "cameras": [
+      "side",
+      "back"
+    ]
+  }
+}

@@ -256,6 +256,8 @@ export interface LaunchRequest {
   speed: number; // m/s
   spinRpm: number; // positive = topspin, negative = backspin
   surface: Surface;
+  /** Integration step for the search (coarser = faster). */
+  dt?: number;
 }
 
 export interface LaunchSolution {
@@ -271,6 +273,37 @@ export interface LaunchSolution {
 const MIN_ELEVATION = -0.6;
 const MAX_ELEVATION = 1.0;
 
+/**
+ * Root of a monotonically increasing function on [lo, hi] (Illinois variant
+ * of regula falsi). Returns the clamped end if there is no sign change.
+ */
+export function solveMonotonic(f: (x: number) => number, lo: number, hi: number, tol = 1e-3, maxIter = 40) {
+  let fa = f(lo);
+  let fb = f(hi);
+  if (fa >= 0) return { x: lo, ok: Math.abs(fa) < tol };
+  if (fb <= 0) return { x: hi, ok: Math.abs(fb) < tol };
+  let a = lo;
+  let b = hi;
+  let side = 0;
+  for (let i = 0; i < maxIter; i++) {
+    const x = (a * fb - b * fa) / (fb - fa);
+    const fx = f(x);
+    if (Math.abs(fx) < tol || Math.abs(b - a) < 1e-9) return { x, ok: true };
+    if (fx < 0) {
+      a = x;
+      fa = fx;
+      if (side === -1) fb /= 2;
+      side = -1;
+    } else {
+      b = x;
+      fb = fx;
+      if (side === 1) fa /= 2;
+      side = 1;
+    }
+  }
+  return { x: (a + b) / 2, ok: false };
+}
+
 function launchState(req: LaunchRequest, dir: Vec3, elevation: number): BallState {
   const vel = vec(
     dir.x * Math.cos(elevation) * req.speed,
@@ -280,13 +313,13 @@ function launchState(req: LaunchRequest, dir: Vec3, elevation: number): BallStat
   return { pos: req.start, vel, spin: spinVector(dir, req.spinRpm) };
 }
 
-function firstLanding(req: LaunchRequest, dir: Vec3, elevation: number): Vec3 {
-  const flight = simulateFlight(launchState(req, dir, elevation), {
+function firstBounceFlight(req: LaunchRequest, dir: Vec3, elevation: number): FlightResult {
+  return simulateFlight(launchState(req, dir, elevation), {
     surface: req.surface,
+    dt: req.dt,
     maxTime: 8,
     stop: (_s, _t, bounces) => bounces > 0,
   });
-  return flight.bounces[0]?.pos ?? flight.final.pos;
 }
 
 /**
@@ -295,44 +328,37 @@ function firstLanding(req: LaunchRequest, dir: Vec3, elevation: number): Vec3 {
  * flight stays in the vertical plane through start and target, so only the
  * elevation has to be searched.
  */
-export function solveLaunch(req: LaunchRequest): LaunchSolution {
+export function solveLaunch(req: LaunchRequest): LaunchSolution & { flight: FlightResult } {
   const toTarget = sub(vec(req.target.x, BALL_RADIUS, req.target.z), req.start);
   const dir = normalize(horizontal(toTarget));
   const distance = length(horizontal(toTarget));
-  const along = (p: Vec3) => dot(horizontal(sub(p, req.start)), dir);
+  const along = (e: number) => {
+    const f = firstBounceFlight(req, dir, e);
+    const p = f.bounces[0]?.pos ?? f.final.pos;
+    return dot(horizontal(sub(p, req.start)), dir) - distance;
+  };
 
-  // Coarse scan for the first elevation that reaches the target, then bisect.
-  const steps = 32;
+  // Coarse scan for the first elevation that reaches the target (the low,
+  // "tennis" root), then refine inside that bracket.
+  const steps = 16;
   let prev = MIN_ELEVATION;
-  let lo = NaN;
-  let hi = NaN;
-  let best = { elevation: MIN_ELEVATION, error: Infinity };
+  let bracket: [number, number] | null = null;
+  let best = { e: MIN_ELEVATION, err: Infinity };
   for (let i = 0; i <= steps; i++) {
     const e = MIN_ELEVATION + ((MAX_ELEVATION - MIN_ELEVATION) * i) / steps;
-    const d = along(firstLanding(req, dir, e));
-    if (Math.abs(d - distance) < best.error) best = { elevation: e, error: Math.abs(d - distance) };
-    if (d >= distance) {
-      if (i > 0) {
-        lo = prev;
-        hi = e;
-      }
+    const d = along(e);
+    if (Math.abs(d) < best.err) best = { e, err: Math.abs(d) };
+    if (d >= 0) {
+      if (i > 0) bracket = [prev, e];
       break;
     }
     prev = e;
   }
-
-  let elevation = best.elevation;
-  if (!Number.isNaN(lo)) {
-    for (let i = 0; i < 40; i++) {
-      const mid = (lo + hi) / 2;
-      if (along(firstLanding(req, dir, mid)) < distance) lo = mid;
-      else hi = mid;
-    }
-    elevation = (lo + hi) / 2;
-  }
+  const elevation = bracket ? solveMonotonic(along, bracket[0], bracket[1], 0.002).x : best.e;
 
   const initial = launchState(req, dir, elevation);
-  const landing = firstLanding(req, dir, elevation);
+  const flight = firstBounceFlight(req, dir, elevation);
+  const landing = flight.bounces[0]?.pos ?? flight.final.pos;
   const miss = length(horizontal(sub(landing, vec(req.target.x, 0, req.target.z))));
-  return { vel: initial.vel, spin: initial.spin, elevation, reachable: miss < 0.05, landing };
+  return { vel: initial.vel, spin: initial.spin, elevation, reachable: miss < 0.05, landing, flight };
 }

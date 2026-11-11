@@ -1,0 +1,63 @@
+{
+  "id": "BH_WIDE_01",
+  "version": 1,
+  "schemaVersion": 1,
+  "title": {
+    "ru": "Бэкхенд: широкий мяч",
+    "en": "Backhand: wide ball"
+  },
+  "description": {
+    "ru": "Мяч уходит широко в сторону бэкхенда. Первый шаг в сторону мяча, постановка ног на ходу.",
+    "en": "The ball goes wide to the backhand. First step towards the ball, set the feet on the move."
+  },
+  "surface": "hard",
+  "player": {
+    "handedness": "right",
+    "backhand": "two_handed",
+    "start": {
+      "x": 0.0,
+      "y": -13.0
+    },
+    "level": "intermediate"
+  },
+  "incomingBall": {
+    "speedKmh": 60,
+    "spin": "topspin",
+    "bounce": {
+      "x": -2.8,
+      "y": -9.6
+    },
+    "apexM": 2.45,
+    "launch": {
+      "x": 1.5,
+      "y": 12.2,
+      "h": 1.0
+    }
+  },
+  "task": {
+    "shot": "backhand",
+    "goal": "neutral"
+  },
+  "learning": {
+    "focus": [
+      "split_step",
+      "first_step",
+      "stance",
+      "recovery"
+    ],
+    "difficulty": 2,
+    "coachApproved": false,
+    "categories": [
+      "wide"
+    ],
+    "decisions": [
+      "first_step",
+      "stance"
+    ],
+    "errorVariant": "no_split_step",
+    "cameras": [
+      "back",
+      "top"
+    ]
+  }
+}

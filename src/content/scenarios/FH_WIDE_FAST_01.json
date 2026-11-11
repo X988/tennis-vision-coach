@@ -1,0 +1,63 @@
+{
+  "id": "FH_WIDE_FAST_01",
+  "version": 1,
+  "schemaVersion": 1,
+  "title": {
+    "ru": "Форхенд: широкий быстрый мяч",
+    "en": "Forehand: wide fast ball"
+  },
+  "description": {
+    "ru": "Быстрый мяч широко в форхенд (пример из ТЗ). Из этой стартовой позиции мяч недостижим: урок о split-step, первом шаге и о том, почему важно восстанавливаться ближе к центру.",
+    "en": "A fast ball wide to the forehand (spec example). From this start position it cannot be reached: a lesson about the split-step, the first step and recovering closer to the centre."
+  },
+  "surface": "hard",
+  "player": {
+    "handedness": "right",
+    "backhand": "two_handed",
+    "start": {
+      "x": 0.2,
+      "y": -12.0
+    },
+    "level": "intermediate"
+  },
+  "incomingBall": {
+    "speedKmh": 75,
+    "spin": "topspin",
+    "bounce": {
+      "x": 3.0,
+      "y": -10.2
+    },
+    "apexM": 2.2,
+    "launch": {
+      "x": -1.5,
+      "y": 12.2,
+      "h": 1.0
+    }
+  },
+  "task": {
+    "shot": "forehand",
+    "goal": "neutral"
+  },
+  "learning": {
+    "focus": [
+      "split_step",
+      "first_step",
+      "recovery"
+    ],
+    "difficulty": 3,
+    "coachApproved": false,
+    "categories": [
+      "wide",
+      "fast"
+    ],
+    "decisions": [
+      "first_step",
+      "stance"
+    ],
+    "errorVariant": "no_split_step",
+    "cameras": [
+      "back",
+      "top"
+    ]
+  }
+}
