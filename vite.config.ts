@@ -3,11 +3,15 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
+// The Android app (Capacitor) ships all files inside the APK, so the service worker is not needed there.
+const isAndroid = process.env.BUILD_TARGET === 'android';
+
 export default defineConfig({
   base: './',
   plugins: [
     react(),
     VitePWA({
+      disable: isAndroid,
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {

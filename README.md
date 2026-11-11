@@ -19,6 +19,17 @@ npm run preview    # просмотр сборки
 
 На iPhone/iPad: откройте сайт в Safari → «Поделиться» → «На экран Домой».
 
+## Android (APK)
+
+APK собирается автоматически в GitHub Actions (workflow «Android APK») при каждом push
+в `main` и в ветки `claude/**`. Скачать: вкладка **Releases** (пре-релизы `apk-N`) или
+**Actions → Android APK → Artifacts**. Это тестовая (debug) сборка: на телефоне нужно
+разрешить «Установку из неизвестных источников».
+
+Локально (нужны Android SDK и JDK 17): `npm run apk` →
+`android/app/build/outputs/apk/debug/app-debug.apk`. Android-обёртка — Capacitor
+(`android/`, `capacitor.config.ts`); в APK приложение работает полностью офлайн.
+
 ## Проверки
 
 | Команда | Что делает |

@@ -1,0 +1,51 @@
+name: Android APK
+
+on:
+  push:
+    branches: [main, 'claude/**']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: gradle
+      - run: npm ci
+      - run: npm test
+      - name: Build web app and sync it into the Android project
+        run: npm run build:android
+      - name: Build debug APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+      - name: Rename APK
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk "TennisVisionCoach-${{ github.run_number }}-debug.apk"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TennisVisionCoach-apk
+          path: TennisVisionCoach-*-debug.apk
+      - name: Publish as a pre-release (direct download link)
+        if: github.event_name != 'pull_request'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-${{ github.run_number }}
+          name: Tennis Vision Coach APK — сборка ${{ github.run_number }}
+          prerelease: true
+          target_commitish: ${{ github.sha }}
+          body: |
+            Тестовая (debug) сборка для Android 5.1+ из коммита ${{ github.sha }}.
+            Установка: скачайте APK на телефон и откройте его; разрешите «Установку из неизвестных источников».
+          files: TennisVisionCoach-*-debug.apk
