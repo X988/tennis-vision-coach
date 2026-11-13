@@ -16,6 +16,7 @@ describe('guided tour', () => {
   it('step ids are unique and every step except the last highlights something', () => {
     expect(new Set(TOUR_STEPS.map((s) => s.id)).size).toBe(TOUR_STEPS.length);
     for (const s of TOUR_STEPS.slice(0, -1)) expect(s.target, s.id).toBeTruthy();
+    expect(TOUR_STEPS.some((s) => s.id === 'voice')).toBe(true);
   });
 
   it('visits every screen and uses an existing lesson', () => {

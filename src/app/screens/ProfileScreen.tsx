@@ -2,6 +2,8 @@ import { BackhandType, Handedness, Language, Level } from '../../engines/profile
 import { LANGUAGES, useT } from '../i18n';
 import { Quality, useStore } from '../store';
 import { Slider } from '../ui/Slider';
+import { useVoice } from '../voice/context';
+import { PRIORITY } from '../voice/speaker';
 
 function Seg<V extends string>({ value, options, onChange }: { value: V; options: { v: V; label: string }[]; onChange: (v: V) => void }) {
   return (
@@ -17,7 +19,8 @@ function Seg<V extends string>({ value, options, onChange }: { value: V; options
 
 export function ProfileScreen() {
   const t = useT();
-  const { profile, setProfile, settings, setSettings } = useStore();
+  const { profile, setProfile, settings, setSettings, setVoice } = useStore();
+  const voice = useVoice();
   return (
     <div className="page narrow">
       <h1>{t('profile.title')}</h1>
@@ -43,6 +46,24 @@ export function ProfileScreen() {
             { v: 'low', label: t('profile.qualityLow') },
           ]}
         />
+        <label>{t('voice.title')}</label>
+        {voice.supported ? (
+          <>
+            <label className="check">
+              <input type="checkbox" checked={settings.voice.enabled} onChange={(e) => setVoice({ enabled: e.target.checked })} />
+              {t('voice.enabled')}
+            </label>
+            <Slider label={t('voice.rate')} unit="×" min={0.7} max={1.5} step={0.05} digits={2} value={settings.voice.rate} onChange={(rate) => setVoice({ rate })} />
+            <div className="actions">
+              <button disabled={!settings.voice.enabled} onClick={() => voice.say(t('voice.sample'), { priority: PRIORITY.tour })}>
+                {t('voice.test')}
+              </button>
+            </div>
+            <p className="muted small">{t('voice.note')}</p>
+          </>
+        ) : (
+          <p className="muted small">{t('voice.unsupported')}</p>
+        )}
       </div>
     </div>
   );

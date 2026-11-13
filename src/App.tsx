@@ -10,6 +10,9 @@ import { ProfileScreen } from './app/screens/ProfileScreen';
 import { Progress } from './app/screens/Progress';
 import { StoreProvider, useStore } from './app/store';
 import { TourProvider } from './app/tour/Tour';
+import { useTour } from './app/tour/context';
+import { VoiceProvider, VoiceToggle } from './app/voice/Voice';
+import { useVoice } from './app/voice/context';
 
 const NAV: { route: Route; key: string; icon: string }[] = [
   { route: { name: 'home' }, key: 'nav.home', icon: '⌂' },
@@ -23,6 +26,13 @@ const NAV: { route: Route; key: string; icon: string }[] = [
 function Shell() {
   const t = useT();
   const route = useRoute();
+  const voice = useVoice();
+  const tour = useTour();
+  // Leaving a screen ends what was being said about it (the tour narrates across screens by itself).
+  useEffect(() => {
+    if (!tour.active) voice.stop();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [route.name, route.name === 'lesson' ? `${route.id}/${route.mode}` : '']);
   const active = (r: Route) => r.name === route.name || (r.name === 'library' && route.name === 'lesson');
   return (
     <div className={`shell route-${route.name}`}>
@@ -39,6 +49,7 @@ function Shell() {
             <span>{t(n.key)}</span>
           </a>
         ))}
+        <VoiceToggle />
       </nav>
       <main className="content">
         {route.name === 'home' && <Home />}
@@ -60,9 +71,11 @@ function WithLanguage() {
   }, [profile.language]);
   return (
     <LangContext.Provider value={profile.language}>
-      <TourProvider>
-        <Shell />
-      </TourProvider>
+      <VoiceProvider>
+        <TourProvider>
+          <Shell />
+        </TourProvider>
+      </VoiceProvider>
     </LangContext.Provider>
   );
 }

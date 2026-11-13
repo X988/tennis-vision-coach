@@ -2,6 +2,9 @@ import { ReactNode, useCallback, useEffect, useLayoutEffect, useMemo, useRef, us
 import { BackhandType, Handedness, Level } from '../../engines/profile';
 import { useT } from '../i18n';
 import { useStore } from '../store';
+import { useVoice } from '../voice/context';
+import { tourCue } from '../voice/narration';
+import { PRIORITY } from '../voice/speaker';
 import { TourContext } from './context';
 import { STEP_ROUTES, TOUR_STEPS } from './steps';
 
@@ -127,6 +130,13 @@ function TourOverlay({ index, go, stop }: { index: number; go: (i: number) => vo
   const [cardPos, setCardPos] = useState<{ left: number; top: number } | null>(null);
   const card = useRef<HTMLDivElement>(null);
   const scrolled = useRef(false);
+  const voice = useVoice();
+
+  // Read the step aloud; stop talking when the tour closes.
+  useEffect(() => {
+    voice.say(tourCue(t, step.id), { priority: PRIORITY.tour });
+  }, [step.id, voice, t]);
+  useEffect(() => () => voice.stop(), [voice.stop]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Navigate to the step's screen.
   useEffect(() => {

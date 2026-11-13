@@ -27,6 +27,13 @@ export interface Settings {
   layers: Layers;
   quality: Quality;
   rate: number;
+  voice: VoiceSettings;
+}
+
+export interface VoiceSettings {
+  enabled: boolean;
+  /** Speech rate, 1 = normal. */
+  rate: number;
 }
 
 export interface WorkingState {
@@ -42,6 +49,7 @@ const DEFAULT_SETTINGS: Settings = {
   layers: { trail: true, bounce: true, footRoute: true, ghost: true, contactZone: true, direction: true },
   quality: 'auto',
   rate: 1,
+  voice: { enabled: true, rate: 1 },
 };
 
 export interface Onboarding {
@@ -71,7 +79,7 @@ function loadPersisted(): Persisted {
     const p = JSON.parse(raw) as Partial<Persisted>;
     return {
       profile: { ...fallback.profile, ...p.profile },
-      settings: { ...fallback.settings, ...p.settings, layers: { ...fallback.settings.layers, ...p.settings?.layers } },
+      settings: { ...fallback.settings, ...p.settings, layers: { ...fallback.settings.layers, ...p.settings?.layers }, voice: { ...fallback.settings.voice, ...p.settings?.voice } },
       working: { ...fallback.working, ...p.working },
       onboarding: { ...fallback.onboarding, ...p.onboarding },
     };
@@ -86,6 +94,7 @@ interface Store extends Persisted {
   setProfile: (p: Partial<Profile>) => void;
   setSettings: (s: Partial<Settings>) => void;
   setLayers: (l: Partial<Layers>) => void;
+  setVoice: (v: Partial<VoiceSettings>) => void;
   setWorking: (w: Partial<WorkingState>) => void;
   setOnboarding: (o: Partial<Onboarding>) => void;
   addAttempt: (a: AttemptRecord) => void;
@@ -133,6 +142,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setProfile: (p) => setState((s) => ({ ...s, profile: { ...s.profile, ...p } })),
       setSettings: (x) => setState((s) => ({ ...s, settings: { ...s.settings, ...x } })),
       setLayers: (l) => setState((s) => ({ ...s, settings: { ...s.settings, layers: { ...s.settings.layers, ...l } } })),
+      setVoice: (v) => setState((s) => ({ ...s, settings: { ...s.settings, voice: { ...s.settings.voice, ...v } } })),
       setWorking: (w) => setState((s) => ({ ...s, working: { ...s.working, ...w } })),
       setOnboarding: (o) => setState((s) => ({ ...s, onboarding: { ...s.onboarding, ...o } })),
       addAttempt,

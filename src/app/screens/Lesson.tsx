@@ -10,6 +10,10 @@ import { Marker } from '../scene/Overlays';
 import { Stage } from '../scene/Stage';
 import { Layers, useStore } from '../store';
 import { useTour } from '../tour/context';
+import { usePhaseVoice } from '../voice/usePhaseVoice';
+import { useVoice } from '../voice/context';
+import { compareCue } from '../voice/narration';
+import { PRIORITY } from '../voice/speaker';
 import { DecisionSummary, PhaseBreakdown, StatusBadge } from '../ui/AnalysisPanel';
 import { ComparePanel } from '../ui/ComparePanel';
 import { DecisionFlow } from '../ui/DecisionFlow';
@@ -38,6 +42,14 @@ export function Lesson({ id, mode }: { id: string; mode: 'watch' | 'decide' | 'c
   const clock = useClock(duration, deciding ? 0.75 : settings.rate);
   // While deciding, the player stays in the ready position so the answer is not revealed.
   const shown = useMemo(() => (plan && deciding ? { ...plan, motion: freeze(plan.motion) } : plan), [plan, deciding]);
+
+  const voice = useVoice();
+  usePhaseVoice(plan, clock, !deciding && !tour.active);
+  const badVariant = bad?.variant ?? null;
+  useEffect(() => {
+    if (mode === 'compare' && bad && !tour.active) voice.say(compareCue(t, bad), { priority: PRIORITY.lesson });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, id, badVariant, voice.enabled]);
 
   useEffect(() => {
     if (id !== 'custom') setWorking({ lastLesson: { id, mode } });
@@ -127,7 +139,7 @@ export function Lesson({ id, mode }: { id: string; mode: 'watch' | 'decide' | 'c
 
         {mode === 'decide' && (
           <>
-            <DecisionFlow key={`${id}-${attemptKey}-${profile.handedness}-${profile.level}`} plan={recommended} onQuestion={setQuestion} onDone={onDone} saved={!tour.active} />
+            <DecisionFlow key={`${id}-${attemptKey}-${profile.handedness}-${profile.level}`} plan={recommended} onQuestion={setQuestion} onDone={onDone} saved={!tour.active} narrate={!tour.active} />
             {answered && (
               <div className="actions">
                 <button onClick={() => setAttemptKey((k) => k + 1)}>{t('lesson.retry')}</button>

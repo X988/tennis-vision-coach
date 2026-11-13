@@ -4,6 +4,9 @@ import { Plan } from '../../engines/plan';
 import { DecisionKind, Stance } from '../../engines/scenario';
 import { reasonText, useT } from '../i18n';
 import { optionLabel } from '../format';
+import { useVoice } from '../voice/context';
+import { questionCue, resultCue } from '../voice/narration';
+import { PRIORITY } from '../voice/speaker';
 import { StanceIcon } from './StanceIcon';
 
 const ARROWS: Record<string, string> = {
@@ -16,9 +19,12 @@ interface Props {
   onDone: (judgements: Judgement[]) => void;
   /** False in training mode, where the attempt is not recorded. */
   saved?: boolean;
+  /** Read questions and the judgement aloud (off while the guided tour is talking). */
+  narrate?: boolean;
 }
 
-export function DecisionFlow({ plan, onQuestion, onDone, saved = true }: Props) {
+export function DecisionFlow({ plan, onQuestion, onDone, saved = true, narrate = true }: Props) {
+  const voice = useVoice();
   const t = useT();
   const kinds = plan.scenario.learning.decisions;
   const [index, setIndex] = useState(0);
@@ -29,6 +35,12 @@ export function DecisionFlow({ plan, onQuestion, onDone, saved = true }: Props) 
   const options = useMemo(() => questionOptions(plan, kind), [plan, kind]);
 
   useEffect(() => onQuestion(finished ? null : kind), [kind, finished, onQuestion]);
+  useEffect(() => {
+    if (!narrate) return;
+    if (finished) voice.say(resultCue(t, results), { priority: PRIORITY.lesson });
+    else voice.say(questionCue(t, kind, index + 1, kinds.length), { priority: PRIORITY.lesson });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kind, finished, narrate, voice.enabled]);
 
   const submit = () => {
     if (!picked) return;

@@ -257,3 +257,7 @@ button.big span { font-size: 0.85rem; opacity: 0.8; font-weight: 400; }
   .tour-card { padding: 12px 14px; }
   .tour-card p { font-size: 0.86rem; margin-bottom: 6px; }
 }
+
+.voice-toggle { min-width: 40px; min-height: 36px; padding: 4px 8px; margin-left: 4px; font-size: 1.05rem; line-height: 1; }
+.voice-toggle[aria-pressed='false'] { opacity: 0.6; }
+@media (max-width: 760px) { .voice-toggle { flex: none; margin: 0 2px; border: none; background: none; } }

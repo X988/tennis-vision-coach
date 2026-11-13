@@ -46,6 +46,7 @@ export const TOUR_STEPS: TourStep[] = [
   { id: 'card', target: 'card-actions' },
   { id: 'progress', route: '#/progress', target: 'page' },
   { id: 'profile', route: '#/profile', target: 'profile-form' },
+  { id: 'voice', target: 'voice-toggle' },
   { id: 'help', target: 'nav-help' },
   { id: 'finish', route: '#/' },
 ];

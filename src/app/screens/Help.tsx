@@ -39,6 +39,7 @@ export function Help() {
           {fromTour('▬', 'track')}
           {fromTour('⏱', 'time')}
           {fromTour('1×', 'rate')}
+          {fromTour('🔊', 'voice')}
         </ul>
       </section>
 
