@@ -14,9 +14,11 @@ interface Props {
   plan: Plan;
   onQuestion: (kind: DecisionKind | null) => void;
   onDone: (judgements: Judgement[]) => void;
+  /** False in training mode, where the attempt is not recorded. */
+  saved?: boolean;
 }
 
-export function DecisionFlow({ plan, onQuestion, onDone }: Props) {
+export function DecisionFlow({ plan, onQuestion, onDone, saved = true }: Props) {
   const t = useT();
   const kinds = plan.scenario.learning.decisions;
   const [index, setIndex] = useState(0);
@@ -39,7 +41,7 @@ export function DecisionFlow({ plan, onQuestion, onDone }: Props) {
 
   if (finished) {
     return (
-      <div className="decision">
+      <div className="decision" data-tour="result">
         <h3>{t('lesson.resultTitle')}</h3>
         {results.map((j) => (
           <div key={j.kind} className={`judgement v-${j.verdict}`}>
@@ -59,13 +61,13 @@ export function DecisionFlow({ plan, onQuestion, onDone }: Props) {
             </ul>
           </div>
         ))}
-        <p className="muted small">{t('lesson.saved')} · {t('disclaimer.notMeasured')}</p>
+        <p className="muted small">{saved ? `${t('lesson.saved')} · ` : ''}{t('disclaimer.notMeasured')}</p>
       </div>
     );
   }
 
   return (
-    <div className="decision">
+    <div className="decision" data-tour="decision">
       <p className="muted small">{t('lesson.decideIntro')}</p>
       <div className="muted small">{t('lesson.question', { n: index + 1, total: kinds.length })}</div>
       <h3>{t(`q.${kind}`)}</h3>

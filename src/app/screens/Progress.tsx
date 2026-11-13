@@ -12,7 +12,7 @@ export function Progress() {
     return s ? (s.title[profile.language] ?? s.title.ru) : id;
   };
   return (
-    <div className="page">
+    <div className="page" data-tour="page">
       <h1>{t('progress.title')}</h1>
       {progress.length === 0 ? (
         <p className="muted">{t('progress.empty')}</p>

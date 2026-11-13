@@ -9,6 +9,7 @@ import { navigate } from '../router';
 import { Marker } from '../scene/Overlays';
 import { Stage } from '../scene/Stage';
 import { Layers, useStore } from '../store';
+import { useTour } from '../tour/context';
 import { DecisionSummary, PhaseBreakdown, StatusBadge } from '../ui/AnalysisPanel';
 import { ComparePanel } from '../ui/ComparePanel';
 import { DecisionFlow } from '../ui/DecisionFlow';
@@ -27,6 +28,7 @@ export function Lesson({ id, mode }: { id: string; mode: 'watch' | 'decide' | 'c
   const [answered, setAnswered] = useState<Judgement[] | null>(null);
   const [attemptKey, setAttemptKey] = useState(0);
   const portrait = useMediaQuery('(max-aspect-ratio: 1/1)');
+  const tour = useTour();
 
   const plan = usePlan(scenario, profile, { stance: mode === 'watch' ? explore : null });
   const recommended = usePlan(scenario, profile);
@@ -56,12 +58,13 @@ export function Lesson({ id, mode }: { id: string; mode: 'watch' | 'decide' | 'c
     (js: Judgement[]) => {
       if (!recommended) return;
       setAnswered(js);
-      addAttempt(makeAttempt(recommended, js));
+      // Training mode (guided tour): nothing is written to the learner's progress.
+      if (!tour.active) addAttempt(makeAttempt(recommended, js));
       clock.loop = false;
       clock.seek(T_OPPONENT - 0.3);
       clock.play();
     },
-    [recommended, addAttempt, clock],
+    [recommended, addAttempt, clock, tour.active],
   );
 
   if (!scenario || !plan || !shown || !recommended) {
@@ -91,7 +94,7 @@ export function Lesson({ id, mode }: { id: string; mode: 'watch' | 'decide' | 'c
   return (
     <div className={`lesson ${portrait ? 'portrait' : ''}`}>
       <div className="lesson-main">
-        <div className={`stages ${mode === 'compare' ? 'two' : ''}`}>
+        <div className={`stages ${mode === 'compare' ? 'two' : ''}`} data-tour="stages">
           {mode === 'compare' && bad ? (
             <>
               <Stage {...stageProps} plan={plan} label={t('lesson.compareCorrect')} tone="good" />
@@ -112,7 +115,8 @@ export function Lesson({ id, mode }: { id: string; mode: 'watch' | 'decide' | 'c
           </div>
           <p className="muted small">{scenario.description[profile.language] ?? scenario.description.ru}</p>
           <ScenarioTags s={scenario} />
-          <div className="tabs">
+          {tour.active && <p className="tour-banner">{t('tour.banner')}</p>}
+          <div className="tabs" data-tour="tabs">
             {(['decide', 'watch', 'compare'] as const).map((m) => (
               <button key={m} className={mode === m ? 'active' : ''} onClick={() => go(m)}>
                 {t(`lesson.mode${m[0].toUpperCase()}${m.slice(1)}`)}
@@ -123,7 +127,7 @@ export function Lesson({ id, mode }: { id: string; mode: 'watch' | 'decide' | 'c
 
         {mode === 'decide' && (
           <>
-            <DecisionFlow key={`${id}-${attemptKey}-${profile.handedness}-${profile.level}`} plan={recommended} onQuestion={setQuestion} onDone={onDone} />
+            <DecisionFlow key={`${id}-${attemptKey}-${profile.handedness}-${profile.level}`} plan={recommended} onQuestion={setQuestion} onDone={onDone} saved={!tour.active} />
             {answered && (
               <div className="actions">
                 <button onClick={() => setAttemptKey((k) => k + 1)}>{t('lesson.retry')}</button>
@@ -143,7 +147,7 @@ export function Lesson({ id, mode }: { id: string; mode: 'watch' | 'decide' | 'c
 
         {mode === 'watch' && (
           <>
-            <section>
+            <section data-tour="stance-explorer">
               <h4>{t('lesson.stanceExplorer')}</h4>
               <div className="seg wrap">
                 <button className={explore === null ? 'active' : ''} onClick={() => setExplore(null)}>
@@ -199,6 +203,10 @@ function freeze(m: NonNullable<ReturnType<typeof usePlan>>['motion']) {
     pelvisFacing: first(m.pelvisFacing),
     leanS: first(m.leanS),
     leanF: first(m.leanF),
+    swayS: first(m.swayS),
+    swayF: first(m.swayF),
+    shoulderRoll: first(m.shoulderRoll),
+    idle: first(m.idle),
     racket: first(m.racket),
   };
 }

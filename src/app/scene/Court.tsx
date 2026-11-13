@@ -1,3 +1,5 @@
+import { useMemo } from 'react';
+import * as THREE from 'three';
 import {
   COURT_HALF_LENGTH,
   DOUBLES_HALF_WIDTH,
@@ -30,33 +32,47 @@ function Line({ x1, z1, x2, z2 }: { x1: number; z1: number; x2: number; z2: numb
   );
 }
 
+let netTexture: THREE.CanvasTexture | null = null;
+function netMesh() {
+  if (netTexture) return netTexture;
+  const c = document.createElement('canvas');
+  c.width = c.height = 32;
+  const g = c.getContext('2d')!;
+  g.fillStyle = 'rgba(10,12,14,0.28)';
+  g.fillRect(0, 0, 32, 32);
+  g.strokeStyle = 'rgba(15,17,20,0.95)';
+  g.lineWidth = 3;
+  g.strokeRect(0, 0, 32, 32);
+  netTexture = new THREE.CanvasTexture(c);
+  netTexture.wrapS = netTexture.wrapT = THREE.RepeatWrapping;
+  return netTexture;
+}
+
 function Net() {
+  const avg = (NET_HEIGHT_CENTER + NET_HEIGHT_POST) / 2;
+  const angle = Math.atan2(NET_HEIGHT_POST - NET_HEIGHT_CENTER, NET_POST_X);
+  const map = useMemo(() => {
+    const t = netMesh().clone();
+    t.repeat.set(NET_POST_X / 0.09, avg / 0.09);
+    t.needsUpdate = true;
+    return t;
+  }, [avg]);
   return (
     <group>
-      {/* Net mesh, one panel per half (average height of centre and post). */}
-      {[-1, 1].map((side) => {
-        const avg = (NET_HEIGHT_CENTER + NET_HEIGHT_POST) / 2;
-        return (
-          <mesh key={side} position={[(side * NET_POST_X) / 2, avg / 2, 0]} castShadow>
-            <boxGeometry args={[NET_POST_X, avg, 0.01]} />
-            <meshStandardMaterial color="#111" transparent opacity={0.45} />
-          </mesh>
-        );
-      })}
+      {/* Net mesh, one panel per half. */}
+      {[-1, 1].map((side) => (
+        <mesh key={side} position={[(side * NET_POST_X) / 2, avg / 2, 0]}>
+          <planeGeometry args={[NET_POST_X, avg]} />
+          <meshBasicMaterial map={map} transparent side={THREE.DoubleSide} depthWrite={false} />
+        </mesh>
+      ))}
       {/* White tape on top */}
-      {[-1, 1].map((side) => {
-        const angle = Math.atan2(NET_HEIGHT_POST - NET_HEIGHT_CENTER, NET_POST_X);
-        return (
-          <mesh
-            key={`tape${side}`}
-            position={[(side * NET_POST_X) / 2, (NET_HEIGHT_CENTER + NET_HEIGHT_POST) / 2, 0]}
-            rotation={[0, 0, side * angle]}
-          >
-            <boxGeometry args={[NET_POST_X, 0.05, 0.02]} />
-            <meshStandardMaterial color="#fff" />
-          </mesh>
-        );
-      })}
+      {[-1, 1].map((side) => (
+        <mesh key={`tape${side}`} position={[(side * NET_POST_X) / 2, avg, 0]} rotation={[0, 0, side * angle]}>
+          <boxGeometry args={[NET_POST_X + 0.02, 0.06, 0.025]} />
+          <meshStandardMaterial color="#fff" />
+        </mesh>
+      ))}
       {/* Centre strap */}
       <mesh position={[0, NET_HEIGHT_CENTER / 2, 0]}>
         <boxGeometry args={[0.05, NET_HEIGHT_CENTER, 0.015]} />

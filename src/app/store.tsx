@@ -44,10 +44,18 @@ const DEFAULT_SETTINGS: Settings = {
   rate: 1,
 };
 
+export interface Onboarding {
+  /** The first-launch welcome has been shown. */
+  welcomeSeen: boolean;
+  /** The guided tour has been completed at least once. */
+  tourDone: boolean;
+}
+
 interface Persisted {
   profile: Profile;
   settings: Settings;
   working: WorkingState;
+  onboarding: Onboarding;
 }
 
 function loadPersisted(): Persisted {
@@ -55,6 +63,7 @@ function loadPersisted(): Persisted {
     profile: DEFAULT_PROFILE,
     settings: DEFAULT_SETTINGS,
     working: { lastLesson: null, draft: { ...LIBRARY.scenarios[0], id: 'CUSTOM_01', learning: { ...LIBRARY.scenarios[0].learning, coachApproved: false } } },
+    onboarding: { welcomeSeen: false, tourDone: false },
   };
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -64,6 +73,7 @@ function loadPersisted(): Persisted {
       profile: { ...fallback.profile, ...p.profile },
       settings: { ...fallback.settings, ...p.settings, layers: { ...fallback.settings.layers, ...p.settings?.layers } },
       working: { ...fallback.working, ...p.working },
+      onboarding: { ...fallback.onboarding, ...p.onboarding },
     };
   } catch {
     return fallback;
@@ -77,6 +87,7 @@ interface Store extends Persisted {
   setSettings: (s: Partial<Settings>) => void;
   setLayers: (l: Partial<Layers>) => void;
   setWorking: (w: Partial<WorkingState>) => void;
+  setOnboarding: (o: Partial<Onboarding>) => void;
   addAttempt: (a: AttemptRecord) => void;
   resetProgress: () => void;
 }
@@ -123,6 +134,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setSettings: (x) => setState((s) => ({ ...s, settings: { ...s.settings, ...x } })),
       setLayers: (l) => setState((s) => ({ ...s, settings: { ...s.settings, layers: { ...s.settings.layers, ...l } } })),
       setWorking: (w) => setState((s) => ({ ...s, working: { ...s.working, ...w } })),
+      setOnboarding: (o) => setState((s) => ({ ...s, onboarding: { ...s.onboarding, ...o } })),
       addAttempt,
       resetProgress,
     }),

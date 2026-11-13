@@ -28,7 +28,8 @@ import { ErrorVariant, ScenarioSpec, Stance, mirrorScenario } from './scenario';
 import { STANCE_LAYOUTS, STROKES, StrokeGeometry, ballSide, dominantSide, strokeKind } from './technique';
 import { Vec3, add, addScaled, dot, length, lerp, scale, sub, vec } from './vector';
 
-export const T_OPPONENT = 0.8;
+/** Simulation time of the opponent's contact: leaves room for the opponent's swing and the split-step. */
+export const T_OPPONENT = 1.0;
 const SPLIT_LEAD = 0.18;
 const SPLIT_AFTER = 0.06;
 
@@ -112,6 +113,13 @@ export interface MotionPlan {
   /** Chest offset (s, f) from above the pelvis, metres. */
   leanS: ScalarKey[];
   leanF: ScalarKey[];
+  /** Weight transfer: pelvis offset (s, f) from the stroke reference point, metres. */
+  swayS: ScalarKey[];
+  swayF: ScalarKey[];
+  /** Vertical offset of the hitting shoulder (the other one moves opposite), metres. */
+  shoulderRoll: ScalarKey[];
+  /** 1 while standing ready (breathing bounce), 0 while playing the ball. */
+  idle: ScalarKey[];
   racket: RacketKeyPlan[];
 }
 
@@ -614,6 +622,8 @@ function buildMotion(m: MotionInput): MotionPlan {
     { t: m.recEnd, v: 0 },
   ];
 
+  // Stepping into the ball (neutral / closed) moves the weight further forward.
+  const stepIn = m.stance === 'neutral' || m.stance === 'closed' ? 1.6 : 1;
   const leanKeys = (v: number): ScalarKey[] => [
     { t: 0, v: 0 },
     { t: Math.max(0, tAccel - 0.15), v: 0 },
@@ -654,7 +664,77 @@ function buildMotion(m: MotionInput): MotionPlan {
     pelvisFacing,
     leanS: leanKeys(m.lean.lateral),
     leanF: leanKeys(m.lean.forward + 0.05 * k),
+    swayS: [
+      { t: 0, v: 0 },
+      { t: Math.max(0, m.tSet - 0.2), v: 0 },
+      { t: m.tSet, v: 0.07 * k * (m.stance === 'open' ? 1.3 : 1) },
+      { t: tAccel, v: 0.07 * k * (m.stance === 'open' ? 1.3 : 1) },
+      { t: m.tc, v: -0.01 * k },
+      { t: m.tc + 0.3, v: -0.08 * k },
+      { t: m.recStart, v: -0.04 * k },
+      { t: m.recStart + 0.2, v: 0 },
+    ],
+    swayF: [
+      { t: 0, v: 0 },
+      { t: Math.max(0, m.tSet - 0.2), v: 0 },
+      { t: m.tSet, v: -0.04 * k },
+      { t: tAccel, v: -0.04 * k },
+      { t: m.tc, v: 0.05 * k * stepIn },
+      { t: m.tc + 0.3, v: 0.07 * k * stepIn },
+      { t: m.recStart + 0.2, v: 0 },
+    ],
+    shoulderRoll: [
+      { t: 0, v: 0 },
+      { t: holdEnd, v: 0 },
+      { t: tDrop, v: -0.05 * k },
+      { t: m.tc, v: -0.01 * k },
+      { t: m.tc + 0.25, v: 0.06 * k },
+      { t: m.recStart + 0.2, v: 0 },
+    ],
+    idle: [
+      { t: 0, v: 1 },
+      { t: Math.max(0.01, Math.min(m.splitStep ? hopStart : m.prepStart, m.prepStart) - 0.1), v: 1 },
+      { t: Math.max(0.02, Math.min(m.splitStep ? hopStart : m.prepStart, m.prepStart)), v: 0 },
+      { t: m.recEnd, v: 0 },
+      { t: m.recEnd + 0.3, v: 1 },
+    ],
     racket,
   };
 }
 
+
+/**
+ * Motion of the opponent for the incoming shot, in the opponent's own frame
+ * (the scene draws it rotated by 180 degrees around the net centre): a
+ * forehand whose contact is exactly the ball's launch point at T_OPPONENT.
+ */
+export function buildOpponentMotion(launch: Vec3): MotionPlan {
+  const ath = athletics({ heightCm: 182, level: 'advanced' });
+  const stroke = STROKES.forehand;
+  const side = PLAYER_RIGHT;
+  const contactPos = vec(-launch.x, launch.y, -launch.z);
+  const o = contactOffset(stroke, ath.heightM);
+  const hit = hitPositionFor(contactPos, side, o.lateral, o.forward);
+  const start = vec(hit.x * 0.6, 0, hit.z - 0.35);
+  const tc = T_OPPONENT;
+  return buildMotion({
+    lean: { lateral: 0, forward: 0 },
+    stroke,
+    side,
+    dominant: side,
+    ath,
+    stance: 'semi_open',
+    start,
+    hit,
+    recovery: vec(hit.x * 0.4, 0, -(COURT_HALF_LENGTH + 0.5)),
+    splitStep: false,
+    prepStart: 0.05,
+    moveStart: 0.08,
+    tSet: tc - 0.42,
+    tc,
+    contactPos,
+    made: true,
+    recStart: tc + 0.5,
+    recEnd: tc + 1.9,
+  });
+}

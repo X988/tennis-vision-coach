@@ -21,7 +21,7 @@ export function ProfileScreen() {
   return (
     <div className="page narrow">
       <h1>{t('profile.title')}</h1>
-      <div className="form">
+      <div className="form" data-tour="profile-form">
         <label>{t('profile.handedness')}</label>
         <Seg<Handedness> value={profile.handedness} onChange={(handedness) => setProfile({ handedness })} options={(['right', 'left'] as const).map((v) => ({ v, label: t(`handedness.${v}`) }))} />
         <label>{t('profile.backhand')}</label>

@@ -6,7 +6,8 @@ export type Route =
   | { name: 'lesson'; id: string; mode: 'watch' | 'decide' | 'compare' }
   | { name: 'constructor' }
   | { name: 'progress' }
-  | { name: 'profile' };
+  | { name: 'profile' }
+  | { name: 'help' };
 
 export function parseHash(hash: string): Route {
   const [path, query = ''] = hash.replace(/^#\/?/, '').split('?');
@@ -25,6 +26,8 @@ export function parseHash(hash: string): Route {
       return { name: 'progress' };
     case 'profile':
       return { name: 'profile' };
+    case 'help':
+      return { name: 'help' };
     default:
       return { name: 'home' };
   }

@@ -61,7 +61,7 @@ export function Constructor() {
   return (
     <div className={`lesson ${portrait ? 'portrait' : ''}`}>
       <div className="lesson-main">
-        <div className="stages">
+        <div className="stages" data-tour="stages">
           <Stage plan={plan} clock={clock} view={settings.camera} layers={settings.layers} quality={settings.quality} />
         </div>
         <Timeline plan={plan} clock={clock} rate={settings.rate} onRate={(rate) => setSettings({ rate })} />
@@ -69,7 +69,7 @@ export function Constructor() {
       <aside className="lesson-side">
         <header className="lesson-head">
           <h2>{t('constructor.title')}</h2>
-          <div className="actions">
+          <div className="actions" data-tour="ctor-actions">
             <select
               aria-label={t('constructor.fromLibrary')}
               value=""
@@ -90,7 +90,7 @@ export function Constructor() {
           </div>
         </header>
 
-        <section className="form">
+        <section className="form" data-tour="ctor-form">
           <h4>{t('constructor.ball')}</h4>
           <Slider label={t('constructor.launchX')} unit={t('units.m')} min={-4} max={4} step={0.1} value={launch.x} onChange={(x) => set((d) => ({ ...d, incomingBall: { ...d.incomingBall, launch: { ...launch, x } } }))} />
           <Slider label={t('constructor.bounceX')} unit={t('units.m')} min={-5} max={5} step={0.1} value={ball.bounce.x} onChange={(x) => set((d) => ({ ...d, incomingBall: { ...d.incomingBall, bounce: { ...d.incomingBall.bounce, x } } }))} />

@@ -1,5 +1,5 @@
 import { COACH_RULES_VERSION } from '../../engines/decision';
-import { Plan } from '../../engines/plan';
+import { Plan, T_OPPONENT } from '../../engines/plan';
 import { SimulationClock } from '../../engines/clock';
 import { reasonText, useT } from '../i18n';
 import { StanceIcon } from './StanceIcon';
@@ -26,7 +26,7 @@ export function PhaseBreakdown({ plan, time, clock }: { plan: Plan; time: number
   const t = useT();
   const active = new Set(currentPhases(plan, time).map((p) => p.id));
   return (
-    <ol className="phases">
+    <ol className="phases" data-tour="phase-list">
       {plan.phases
         .filter((p) => p.id !== 'feedback')
         .map((p) => (
@@ -50,7 +50,7 @@ export function DecisionSummary({ plan }: { plan: Plan }) {
   const reply = plan.reply;
   const turnBefore = plan.contact.t - d.prep.starts.on_read;
   return (
-    <div className="analysis">
+    <div className="analysis" data-tour="analysis">
       <div className="row-between">
         <h3>{t('analysis.title')}</h3>
         <StatusBadge plan={plan} />
@@ -82,7 +82,7 @@ export function DecisionSummary({ plan }: { plan: Plan }) {
         <dt>{t('analysis.margin')}</dt>
         <dd className={plan.reach.best.margin < 0 ? 'bad' : ''}>{plan.reach.best.margin.toFixed(2)} {t('units.s')}</dd>
         <dt>{t('analysis.contactTime')}</dt>
-        <dd>{(plan.contact.t - 0.8).toFixed(2)} {t('units.s')}</dd>
+        <dd>{(plan.contact.t - T_OPPONENT).toFixed(2)} {t('units.s')}</dd>
         <dt>{t('analysis.contactHeight')}</dt>
         <dd>{plan.contact.pos.y.toFixed(2)} {t('units.m')}</dd>
         <dt>{t('layers.contactZone')}</dt>

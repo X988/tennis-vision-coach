@@ -42,7 +42,7 @@ export function Library() {
   return (
     <div className="page">
       <h1>{t('library.title')}</h1>
-      <div className="filters">
+      <div className="filters" data-tour="filters">
         <label>
           {t('library.filterShot')}
           <select value={shot} onChange={(e) => setShot(e.target.value)}>
@@ -91,7 +91,7 @@ export function Library() {
               </div>
               <p className="muted small">{s.description[profile.language] ?? s.description.ru}</p>
               <ScenarioTags s={s} />
-              <div className="actions">
+              <div className="actions" data-tour="card-actions">
                 <button className="primary" onClick={() => navigate({ name: 'lesson', id: s.id, mode: 'decide' })}>{t('library.learn')}</button>
                 <button onClick={() => navigate({ name: 'lesson', id: s.id, mode: 'watch' })}>{t('library.watch')}</button>
               </div>

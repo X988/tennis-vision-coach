@@ -1,4 +1,4 @@
-import { Plan } from '../../engines/plan';
+import { Plan, T_OPPONENT } from '../../engines/plan';
 import { useT } from '../i18n';
 
 export function ComparePanel({ good, bad }: { good: Plan; bad: Plan }) {
@@ -15,8 +15,8 @@ export function ComparePanel({ good, bad }: { good: Plan; bad: Plan }) {
     },
     {
       label: t('event.contact'),
-      a: `${(good.contact.t - 0.8).toFixed(2)} ${t('units.s')}`,
-      b: bad.contact.made ? `${(bad.contact.t - 0.8).toFixed(2)} ${t('units.s')}` : '—',
+      a: `${(good.contact.t - T_OPPONENT).toFixed(2)} ${t('units.s')}`,
+      b: bad.contact.made ? `${(bad.contact.t - T_OPPONENT).toFixed(2)} ${t('units.s')}` : '—',
       diff: Math.abs(good.contact.t - bad.contact.t) > 0.01 || !bad.contact.made,
     },
     {
@@ -33,7 +33,7 @@ export function ComparePanel({ good, bad }: { good: Plan; bad: Plan }) {
     },
   ];
   return (
-    <div className="compare">
+    <div className="compare" data-tour="compare-panel">
       <h3>{t('lesson.differences')}</h3>
       <p>{t(`variant.consequence.${v}`, { stance: t(`stance.${bad.stance}`) })}</p>
       <table>

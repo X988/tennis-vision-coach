@@ -60,7 +60,7 @@ export function Timeline({ plan, clock, rate, onRate, keyboard = true }: Props) 
 
   return (
     <div className="timeline">
-      <div className="tl-track">
+      <div className="tl-track" data-tour="tl-track">
         {plan.phases.map((p) => (
           <button
             key={p.id}
@@ -85,22 +85,22 @@ export function Timeline({ plan, clock, rate, onRate, keyboard = true }: Props) 
         />
       </div>
       <div className="tl-controls">
-        <button className="icon" title={t('timeline.phaseBack')} aria-label={t('timeline.phaseBack')} onClick={() => clock.jump(marks, -1)}>⏮</button>
-        <button className="icon" title={t('timeline.frameBack')} aria-label={t('timeline.frameBack')} onClick={() => clock.step(-FRAME)}>◀︎</button>
-        <button className="icon primary" title={playing ? t('timeline.pause') : t('timeline.play')} aria-label={playing ? t('timeline.pause') : t('timeline.play')} onClick={() => clock.toggle()}>
+        <button className="icon" data-tour="btn-phase-back" title={t('timeline.phaseBack')} aria-label={t('timeline.phaseBack')} onClick={() => clock.jump(marks, -1)}>⏮</button>
+        <button className="icon" data-tour="btn-frame-back" title={t('timeline.frameBack')} aria-label={t('timeline.frameBack')} onClick={() => clock.step(-FRAME)}>◀︎</button>
+        <button className="icon primary" data-tour="btn-play" title={playing ? t('timeline.pause') : t('timeline.play')} aria-label={playing ? t('timeline.pause') : t('timeline.play')} onClick={() => clock.toggle()}>
           {playing ? '❚❚' : '▶'}
         </button>
-        <button className="icon" title={t('timeline.frameFwd')} aria-label={t('timeline.frameFwd')} onClick={() => clock.step(FRAME)}>▶︎|</button>
-        <button className="icon" title={t('timeline.phaseFwd')} aria-label={t('timeline.phaseFwd')} onClick={() => clock.jump(marks, 1)}>⏭</button>
-        <span className="tl-time">{formatRelative(t, time, plan.contact.t)}</span>
-        <select className="rate-select" aria-label={t('timeline.speed')} value={rate} onChange={(e) => onRate(Number(e.target.value))}>
+        <button className="icon" data-tour="btn-frame-fwd" title={t('timeline.frameFwd')} aria-label={t('timeline.frameFwd')} onClick={() => clock.step(FRAME)}>▶︎|</button>
+        <button className="icon" data-tour="btn-phase-fwd" title={t('timeline.phaseFwd')} aria-label={t('timeline.phaseFwd')} onClick={() => clock.jump(marks, 1)}>⏭</button>
+        <span className="tl-time" data-tour="tl-time">{formatRelative(t, time, plan.contact.t)}</span>
+        <select className="rate-select" data-tour="rate" aria-label={t('timeline.speed')} value={rate} onChange={(e) => onRate(Number(e.target.value))}>
           {RATES.map((r) => (
             <option key={r} value={r}>
               {r}×
             </option>
           ))}
         </select>
-        <span className="seg rate-seg" role="group" aria-label={t('timeline.speed')}>
+        <span className="seg rate-seg" data-tour="rate" role="group" aria-label={t('timeline.speed')}>
           {RATES.map((r) => (
             <button key={r} className={r === rate ? 'active' : ''} onClick={() => onRate(r)}>
               {r}×

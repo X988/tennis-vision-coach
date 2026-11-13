@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { LIBRARY } from '../../content/library';
 import { PLAYER_RIGHT } from '../court';
 import { footAt, poseAt } from '../motion';
-import { buildPlan } from '../plan';
+import { T_OPPONENT, buildOpponentMotion, buildPlan } from '../plan';
 import { DEFAULT_PROFILE, Profile } from '../profile';
 import { CATEGORIES, ERROR_VARIANTS, STANCES } from '../scenario';
 import { Vec3, dot, length, sub } from '../vector';
@@ -135,6 +135,14 @@ describe('plan invariants', () => {
     const beg = buildPlan(wide, { ...profile, level: 'beginner' });
     const adv = buildPlan(wide, { ...profile, level: 'advanced' });
     expect(adv.reach.best.margin).toBeGreaterThan(beg.reach.best.margin);
+  });
+
+  it('the opponent hits the ball at its launch point', () => {
+    const p = buildPlan(s, profile);
+    const launch = p.incoming.initial.pos;
+    const j = poseAt(buildOpponentMotion(launch), T_OPPONENT);
+    // Opponent frame is the scene rotated by 180 degrees around the net centre.
+    expect(length(sub(j.racket.head, { x: -launch.x, y: launch.y, z: -launch.z }))).toBeLessThan(0.01);
   });
 
   it('an unreachable ball is reported, not teleported to', () => {
