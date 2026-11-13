@@ -1,0 +1,58 @@
+{
+  "id": "FH_MEDIUM_NEUTRAL_01",
+  "version": 1,
+  "schemaVersion": 1,
+  "title": {
+    "ru": "Форхенд: средний мяч",
+    "en": "Forehand: medium-depth ball"
+  },
+  "description": {
+    "ru": "Стандартный мяч в середину задней части корта под форхенд. Разворот сразу после split-step, полуоткрытая стойка.",
+    "en": "A standard rally ball to the forehand. Turn right after the split-step, semi-open stance."
+  },
+  "surface": "hard",
+  "player": {
+    "handedness": "right",
+    "backhand": "two_handed",
+    "start": {
+      "x": 0.0,
+      "y": -13.0
+    },
+    "level": "intermediate"
+  },
+  "incomingBall": {
+    "speedKmh": 65,
+    "spin": "topspin",
+    "bounce": {
+      "x": 1.6,
+      "y": -8.6
+    },
+    "apexM": 2.0
+  },
+  "task": {
+    "shot": "forehand",
+    "goal": "neutral"
+  },
+  "learning": {
+    "focus": [
+      "split_step",
+      "unit_turn",
+      "stance",
+      "contact"
+    ],
+    "difficulty": 1,
+    "coachApproved": false,
+    "categories": [
+      "medium"
+    ],
+    "decisions": [
+      "stance",
+      "first_step"
+    ],
+    "errorVariant": "late_prep",
+    "cameras": [
+      "back",
+      "side"
+    ]
+  }
+}

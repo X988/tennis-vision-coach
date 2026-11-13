@@ -1,24 +1,88 @@
 # Tennis Vision Coach
 
-Vertical slice: right forehand scenario with Ball Engine (approximate physics + bounce), AnimationEngine (sync contact), Scenario.
+Интерактивный 3D-тренажёр игровых ситуаций в теннисе (PWA). Пользователь получает
+игровую ситуацию, принимает решение (первый шаг, стойка, точка контакта, момент
+подготовки) и смотрит движение 3D-теннисиста по фазам: куда бежать, как поставить
+ноги, когда разворачиваться, где встретить мяч и куда восстанавливаться.
 
-## Architecture
-- `src/engines/BallEngine.ts` — trajectory, bounce, contact time
-- `src/engines/AnimationEngine.ts` — forehand progress scaled to contact
-- `src/engines/Scenario.ts` — shared simTime, params, play/pause
-- Components: Court (singles dimensions), Ball, Player (placeholder; drop glTF into public/models/)
+Статус: **этап 2 (MVP 3D-тренажёра)** по ТЗ v1.0. AI Video Coach (этап 4) не начат —
+ТЗ требует сначала доказать работу единой 3D-системы.
 
-## Launch
+## Запуск
+
 ```bash
-git clone https://github.com/X988/tennis-vision-coach.git
-cd tennis-vision-coach
 npm install
-npm run dev
+npm run dev        # http://localhost:5173
+npm run build      # продакшн-сборка в dist/ (PWA, работает офлайн после первого открытия)
+npm run preview    # просмотр сборки
 ```
-Open http://localhost:5173
 
-Controls: Play/Pause/Step, speed 0.25x/1x, camera presets + free orbit, sliders for bounce Z and ball speed (recalculates trajectory + contact sync).
+На iPhone/iPad: откройте сайт в Safari → «Поделиться» → «На экран Домой».
 
-Target ≥30 FPS on mid-range hardware (simple geometry).
+## Android (APK)
 
-Replace Player with `useGLTF` for real model.
+APK собирается автоматически в GitHub Actions (workflow «Android APK») при каждом push
+в `main` и в ветки `claude/**`. Скачать: вкладка **Releases** (пре-релизы `apk-N`) или
+**Actions → Android APK → Artifacts**. Это тестовая (debug) сборка: на телефоне нужно
+разрешить «Установку из неизвестных источников». Сборки подписаны одним тестовым ключом
+(`android/app/debug.keystore`), поэтому новая версия ставится поверх старой. Исключение —
+самая первая сборка `apk-1`: её нужно один раз удалить вручную.
+
+Локально (нужны Android SDK и JDK 17): `npm run apk` →
+`android/app/build/outputs/apk/debug/app-debug.apk`. Android-обёртка — Capacitor
+(`android/`, `capacitor.config.ts`); в APK приложение работает полностью офлайн.
+
+## Проверки
+
+| Команда | Что делает |
+| --- | --- |
+| `npm test` | Unit-тесты движков (Vitest) |
+| `npm run lint` | ESLint |
+| `npm run typecheck` | TypeScript |
+| `npm run check` | Всё вместе |
+
+CI (GitHub Actions) запускает типы, линтер, тесты и сборку на каждый push в `main` и в PR.
+
+## Первый запуск и обучение
+
+При первом запуске приложение спрашивает ведущую руку, тип бэкхенда и уровень и
+предлагает пройти обучение: 31 шаг с подсветкой каждой кнопки на всех экранах. Урок
+внутри обучения идёт в учебном режиме — результат не попадает в прогресс. Обучение
+можно пропустить, прервать и запустить снова: «Справка» → «Пройти обучение заново».
+В «Справке» же — описание всех кнопок, цветов, жестов и клавиш.
+
+## Голосовое сопровождение
+
+Голос читает шаги обучения, называет фазы движения, зачитывает вопросы и разбор ответа,
+объясняет ошибку в режиме «Сравнение». Речь синтезирует само устройство (работает без
+интернета): в браузере и на iPhone — Web Speech API, в Android-приложении — системный
+движок через `@capacitor-community/text-to-speech`. Включается значком 🔊 в меню; скорость
+речи и проверка голоса — в «Профиле». На Android нужен установленный русский голос
+(Настройки → Синтез речи).
+
+## Экраны
+
+Главная · Библиотека (фильтры: удар, сложность, ситуация, ошибка) · Урок с режимами
+«Выбери решение», «Разбор» (пошаговый, по фазам) и «Сравнение» (эталон и типичная
+ошибка синхронно) · Конструктор ситуации · Прогресс · Профиль (рука, тип бэкхенда,
+рост, уровень, язык, качество графики).
+
+Управление: пробел — пауза; ←/→ — кадр; Shift+←/→ — фаза; C — к контакту;
+скорость 0,1×–2×; камеры: сзади, сбоку, сверху, со стороны соперника, свободная 360°,
+фокус на контакте.
+
+## Документация
+
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — движки и общий simulationTime
+- [docs/SCENARIO_FORMAT.md](docs/SCENARIO_FORMAT.md) — формат сценария, координаты, валидация
+- [docs/ACCEPTANCE.md](docs/ACCEPTANCE.md) — соответствие критериям приёмки MVP и что осталось
+- [CHANGELOG.md](CHANGELOG.md)
+
+## Важные ограничения
+
+- Методика (правила выбора стойки, ключевые позы замаха) — **черновик**, все 12 сценариев
+  помечены `coachApproved: false` до проверки тренером (этап 0 ТЗ).
+- Модель игрока процедурная (суставы + IK). Подготовленные glTF-анимации с правами
+  использования не предоставлены; Animation Engine выдаёт позу суставов, которой можно
+  управлять костями glTF-модели.
+- Приложение оценивает решения, выбранные на экране, а не реальные движения ученика.

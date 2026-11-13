@@ -1,0 +1,57 @@
+{
+  "id": "BH_SHORT_ATTACK_01",
+  "version": 1,
+  "schemaVersion": 1,
+  "title": {
+    "ru": "Бэкхенд: короткий низкий мяч",
+    "en": "Backhand: short low ball"
+  },
+  "description": {
+    "ru": "Короткий срезанный мяч низко над сеткой. Выход вперёд, низкая посадка, перенос веса в мяч.",
+    "en": "A short sliced ball. Move in, get low and transfer weight into the ball."
+  },
+  "surface": "hard",
+  "player": {
+    "handedness": "right",
+    "backhand": "two_handed",
+    "start": {
+      "x": 0.0,
+      "y": -13.0
+    },
+    "level": "intermediate"
+  },
+  "incomingBall": {
+    "speedKmh": 50,
+    "spin": "slice",
+    "bounce": {
+      "x": -1.0,
+      "y": -5.6
+    }
+  },
+  "task": {
+    "shot": "backhand",
+    "goal": "attacking"
+  },
+  "learning": {
+    "focus": [
+      "first_step",
+      "footwork",
+      "stance"
+    ],
+    "difficulty": 2,
+    "coachApproved": false,
+    "categories": [
+      "short",
+      "low"
+    ],
+    "decisions": [
+      "first_step",
+      "stance"
+    ],
+    "errorVariant": "too_close",
+    "cameras": [
+      "side",
+      "back"
+    ]
+  }
+}
