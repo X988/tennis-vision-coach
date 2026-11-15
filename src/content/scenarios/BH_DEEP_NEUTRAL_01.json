@@ -1,0 +1,57 @@
+{
+  "id": "BH_DEEP_NEUTRAL_01",
+  "version": 1,
+  "schemaVersion": 1,
+  "title": {
+    "ru": "Бэкхенд: глубокий мяч",
+    "en": "Backhand: deep ball"
+  },
+  "description": {
+    "ru": "Глубокий мяч под бэкхенд. Решение: отойти назад или принять мяч раньше.",
+    "en": "A deep ball to the backhand. Decide: move back or take it earlier."
+  },
+  "surface": "hard",
+  "player": {
+    "handedness": "right",
+    "backhand": "two_handed",
+    "start": {
+      "x": 0.0,
+      "y": -13.0
+    },
+    "level": "intermediate"
+  },
+  "incomingBall": {
+    "speedKmh": 74,
+    "spin": "topspin",
+    "bounce": {
+      "x": -1.2,
+      "y": -10.8
+    },
+    "apexM": 2.3
+  },
+  "task": {
+    "shot": "backhand",
+    "goal": "neutral"
+  },
+  "learning": {
+    "focus": [
+      "footwork",
+      "stance",
+      "contact"
+    ],
+    "difficulty": 2,
+    "coachApproved": false,
+    "categories": [
+      "deep"
+    ],
+    "decisions": [
+      "stance",
+      "position"
+    ],
+    "errorVariant": "late_prep",
+    "cameras": [
+      "back",
+      "top"
+    ]
+  }
+}

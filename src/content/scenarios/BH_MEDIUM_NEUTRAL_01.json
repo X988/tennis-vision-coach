@@ -1,0 +1,58 @@
+{
+  "id": "BH_MEDIUM_NEUTRAL_01",
+  "version": 1,
+  "schemaVersion": 1,
+  "title": {
+    "ru": "Бэкхенд: средний мяч",
+    "en": "Backhand: medium-depth ball"
+  },
+  "description": {
+    "ru": "Ровный мяч под двуручный бэкхенд. Ранний разворот плеч и постановка ног до отскока.",
+    "en": "A steady ball to the two-handed backhand. Early shoulder turn, feet set before the bounce."
+  },
+  "surface": "hard",
+  "player": {
+    "handedness": "right",
+    "backhand": "two_handed",
+    "start": {
+      "x": 0.0,
+      "y": -13.0
+    },
+    "level": "intermediate"
+  },
+  "incomingBall": {
+    "speedKmh": 64,
+    "spin": "topspin",
+    "bounce": {
+      "x": -1.6,
+      "y": -8.7
+    },
+    "apexM": 2.1
+  },
+  "task": {
+    "shot": "backhand",
+    "goal": "neutral"
+  },
+  "learning": {
+    "focus": [
+      "split_step",
+      "unit_turn",
+      "stance",
+      "contact"
+    ],
+    "difficulty": 1,
+    "coachApproved": false,
+    "categories": [
+      "medium"
+    ],
+    "decisions": [
+      "stance",
+      "prep_timing"
+    ],
+    "errorVariant": "no_split_step",
+    "cameras": [
+      "back",
+      "top"
+    ]
+  }
+}

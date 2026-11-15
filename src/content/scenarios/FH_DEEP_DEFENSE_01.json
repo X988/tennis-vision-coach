@@ -1,0 +1,58 @@
+{
+  "id": "FH_DEEP_DEFENSE_01",
+  "version": 1,
+  "schemaVersion": 1,
+  "title": {
+    "ru": "Форхенд: глубокий мяч, защита",
+    "en": "Forehand: deep ball, defence"
+  },
+  "description": {
+    "ru": "Глубокий высокий мяч к задней линии. Отход назад, открытая стойка, надёжный защитный ответ.",
+    "en": "A deep, high ball near the baseline. Move back, open stance, safe defensive reply."
+  },
+  "surface": "hard",
+  "player": {
+    "handedness": "right",
+    "backhand": "two_handed",
+    "start": {
+      "x": 0.0,
+      "y": -13.0
+    },
+    "level": "intermediate"
+  },
+  "incomingBall": {
+    "speedKmh": 68,
+    "spin": "topspin",
+    "bounce": {
+      "x": 1.0,
+      "y": -11.0
+    },
+    "apexM": 2.6
+  },
+  "task": {
+    "shot": "forehand",
+    "goal": "defensive"
+  },
+  "learning": {
+    "focus": [
+      "first_step",
+      "footwork",
+      "recovery"
+    ],
+    "difficulty": 2,
+    "coachApproved": false,
+    "categories": [
+      "deep",
+      "high"
+    ],
+    "decisions": [
+      "first_step",
+      "position"
+    ],
+    "errorVariant": "no_split_step",
+    "cameras": [
+      "back",
+      "side"
+    ]
+  }
+}

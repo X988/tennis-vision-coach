@@ -1,0 +1,57 @@
+{
+  "id": "FH_LOW_SLICE_01",
+  "version": 1,
+  "schemaVersion": 1,
+  "title": {
+    "ru": "Форхенд: низкий срезанный мяч",
+    "en": "Forehand: low slice"
+  },
+  "description": {
+    "ru": "Низкий скользящий отскок на траве. Низкая посадка, контакт впереди и сбоку.",
+    "en": "A low skidding bounce on grass. Get low, contact in front and to the side."
+  },
+  "surface": "grass",
+  "player": {
+    "handedness": "right",
+    "backhand": "two_handed",
+    "start": {
+      "x": 0.0,
+      "y": -13.0
+    },
+    "level": "intermediate"
+  },
+  "incomingBall": {
+    "speedKmh": 62,
+    "spin": "slice",
+    "bounce": {
+      "x": 1.5,
+      "y": -8.9
+    },
+    "apexM": 1.5
+  },
+  "task": {
+    "shot": "forehand",
+    "goal": "neutral"
+  },
+  "learning": {
+    "focus": [
+      "footwork",
+      "stance",
+      "contact"
+    ],
+    "difficulty": 2,
+    "coachApproved": false,
+    "categories": [
+      "low"
+    ],
+    "decisions": [
+      "stance",
+      "position"
+    ],
+    "errorVariant": "late_prep",
+    "cameras": [
+      "side",
+      "back"
+    ]
+  }
+}

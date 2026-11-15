@@ -1,0 +1,62 @@
+{
+  "id": "FH_FAST_FLAT_01",
+  "version": 1,
+  "schemaVersion": 1,
+  "title": {
+    "ru": "Форхенд: быстрый плоский мяч",
+    "en": "Forehand: fast flat ball"
+  },
+  "description": {
+    "ru": "Быстрый плоский мяч. Решает ранняя подготовка: разворот сразу после чтения мяча.",
+    "en": "A fast flat ball. Early preparation decides: turn as soon as you read the ball."
+  },
+  "surface": "hard",
+  "player": {
+    "handedness": "right",
+    "backhand": "two_handed",
+    "start": {
+      "x": 0.0,
+      "y": -13.0
+    },
+    "level": "intermediate"
+  },
+  "incomingBall": {
+    "speedKmh": 92,
+    "spin": "flat",
+    "bounce": {
+      "x": 1.1,
+      "y": -9.8
+    },
+    "launch": {
+      "x": 0.0,
+      "y": 12.2,
+      "h": 1.3
+    }
+  },
+  "task": {
+    "shot": "forehand",
+    "goal": "neutral"
+  },
+  "learning": {
+    "focus": [
+      "split_step",
+      "unit_turn",
+      "contact"
+    ],
+    "difficulty": 3,
+    "coachApproved": false,
+    "categories": [
+      "fast",
+      "low"
+    ],
+    "decisions": [
+      "prep_timing",
+      "stance"
+    ],
+    "errorVariant": "late_prep",
+    "cameras": [
+      "back",
+      "side"
+    ]
+  }
+}
