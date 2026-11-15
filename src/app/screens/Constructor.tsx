@@ -7,6 +7,7 @@ import { useT } from '../i18n';
 import { navigate } from '../router';
 import { Stage } from '../scene/Stage';
 import { useStore } from '../store';
+import { track } from '../analytics/analytics';
 import { DecisionSummary } from '../ui/AnalysisPanel';
 import { Slider } from '../ui/Slider';
 import { Timeline } from '../ui/Timeline';
@@ -48,6 +49,7 @@ export function Constructor() {
   const launch = ball.launch ?? { x: 0, y: COURT_HALF_LENGTH + 0.3, h: 1 };
 
   const exportJson = () => {
+    track('constructor_export');
     const blob = new Blob([JSON.stringify(draft, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -75,7 +77,10 @@ export function Constructor() {
               value=""
               onChange={(e) => {
                 const s = LIBRARY.scenarios.find((x) => x.id === e.target.value);
-                if (s) setWorking({ draft: { ...s, id: 'CUSTOM_01' } });
+                if (s) {
+                  setWorking({ draft: { ...s, id: 'CUSTOM_01' } });
+                  track('constructor_load', { scenario: s.id });
+                }
               }}
             >
               <option value="">{t('constructor.fromLibrary')}…</option>

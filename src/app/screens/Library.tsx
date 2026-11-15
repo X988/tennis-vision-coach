@@ -4,6 +4,7 @@ import { CATEGORIES, ERROR_VARIANTS, ScenarioSpec } from '../../engines/scenario
 import { useT } from '../i18n';
 import { navigate } from '../router';
 import { useStore } from '../store';
+import { track } from '../analytics/analytics';
 
 export function ScenarioTags({ s }: { s: ScenarioSpec }) {
   const t = useT();
@@ -45,7 +46,7 @@ export function Library() {
       <div className="filters" data-tour="filters">
         <label>
           {t('library.filterShot')}
-          <select value={shot} onChange={(e) => setShot(e.target.value)}>
+          <select value={shot} onChange={(e) => (setShot(e.target.value), track('library_filter', { filter: 'shot', value: e.target.value }))}>
             <option value="all">{t('library.all')}</option>
             <option value="forehand">{t('shot.forehand')}</option>
             <option value="backhand">{t('shot.backhand')}</option>
@@ -53,7 +54,7 @@ export function Library() {
         </label>
         <label>
           {t('library.filterDifficulty')}
-          <select value={diff} onChange={(e) => setDiff(e.target.value)}>
+          <select value={diff} onChange={(e) => (setDiff(e.target.value), track('library_filter', { filter: 'difficulty', value: e.target.value }))}>
             <option value="all">{t('library.all')}</option>
             {[1, 2, 3].map((d) => (
               <option key={d} value={d}>{'●'.repeat(d)}</option>
@@ -62,7 +63,7 @@ export function Library() {
         </label>
         <label>
           {t('library.filterCategory')}
-          <select value={cat} onChange={(e) => setCat(e.target.value)}>
+          <select value={cat} onChange={(e) => (setCat(e.target.value), track('library_filter', { filter: 'category', value: e.target.value }))}>
             <option value="all">{t('library.all')}</option>
             {CATEGORIES.map((c) => (
               <option key={c} value={c}>{t(`category.${c}`)}</option>
@@ -71,7 +72,7 @@ export function Library() {
         </label>
         <label>
           {t('library.filterError')}
-          <select value={err} onChange={(e) => setErr(e.target.value)}>
+          <select value={err} onChange={(e) => (setErr(e.target.value), track('library_filter', { filter: 'error', value: e.target.value }))}>
             <option value="all">{t('library.all')}</option>
             {ERROR_VARIANTS.map((v) => (
               <option key={v} value={v}>{t(`variant.${v}`)}</option>

@@ -10,6 +10,7 @@ import { Marker } from '../scene/Overlays';
 import { Stage } from '../scene/Stage';
 import { Layers, useStore } from '../store';
 import { useTour } from '../tour/context';
+import { track } from '../analytics/analytics';
 import { usePhaseVoice } from '../voice/usePhaseVoice';
 import { useVoice } from '../voice/context';
 import { compareCue } from '../voice/narration';
@@ -19,6 +20,7 @@ import { ComparePanel } from '../ui/ComparePanel';
 import { DecisionFlow } from '../ui/DecisionFlow';
 import { Timeline } from '../ui/Timeline';
 import { CameraBar, LayerToggles } from '../ui/ViewControls';
+import { NotFound } from './Fallbacks';
 import { ScenarioTags } from './Library';
 
 const NO_LAYERS: Layers = { trail: true, bounce: true, footRoute: false, ghost: false, contactZone: false, direction: false };
@@ -52,6 +54,8 @@ export function Lesson({ id, mode }: { id: string; mode: 'watch' | 'decide' | 'c
   }, [mode, id, badVariant, voice.enabled]);
 
   useEffect(() => {
+    track('lesson_open', { scenario: id, mode, training: tour.active });
+    if (mode === 'compare' && scenario) track('compare_open', { scenario: id, variant: scenario.learning.errorVariant });
     if (id !== 'custom') setWorking({ lastLesson: { id, mode } });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, mode]);
@@ -70,21 +74,25 @@ export function Lesson({ id, mode }: { id: string; mode: 'watch' | 'decide' | 'c
     (js: Judgement[]) => {
       if (!recommended) return;
       setAnswered(js);
+      for (const j of js) track('question_answered', { scenario: id, kind: j.kind, verdict: j.verdict, training: tour.active });
+      track('lesson_result', {
+        scenario: id,
+        correct: js.filter((j) => j.verdict === 'recommended').length,
+        acceptable: js.filter((j) => j.verdict === 'acceptable').length,
+        wrong: js.filter((j) => j.verdict === 'not_recommended').length,
+        training: tour.active,
+      });
       // Training mode (guided tour): nothing is written to the learner's progress.
       if (!tour.active) addAttempt(makeAttempt(recommended, js));
       clock.loop = false;
       clock.seek(T_OPPONENT - 0.3);
       clock.play();
     },
-    [recommended, addAttempt, clock, tour.active],
+    [recommended, addAttempt, clock, tour.active, id],
   );
 
   if (!scenario || !plan || !shown || !recommended) {
-    return (
-      <div className="page">
-        <p>404</p>
-      </div>
-    );
+    return <NotFound />;
   }
 
   const idx = LIBRARY.scenarios.findIndex((s) => s.id === scenario.id);
@@ -166,7 +174,10 @@ export function Lesson({ id, mode }: { id: string; mode: 'watch' | 'decide' | 'c
                   {t('lesson.stanceAuto')}
                 </button>
                 {STANCES.map((s) => (
-                  <button key={s} className={explore === s ? 'active' : ''} onClick={() => setExplore(s)}>
+                  <button key={s} className={explore === s ? 'active' : ''} onClick={() => {
+                      setExplore(s);
+                      track('stance_explore', { scenario: id, stance: s });
+                    }}>
                     {t(`stance.${s}`)}
                   </button>
                 ))}

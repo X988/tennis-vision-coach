@@ -3,6 +3,7 @@ import { FRAME, RATES, SimulationClock } from '../../engines/clock';
 import { Plan, PhaseId } from '../../engines/plan';
 import { useClockState } from '../hooks';
 import { useT } from '../i18n';
+import { track } from '../analytics/analytics';
 import { formatRelative } from '../format';
 
 const PHASE_COLORS: Record<PhaseId, string> = {
@@ -31,8 +32,12 @@ interface Props {
   keyboard?: boolean;
 }
 
-export function Timeline({ plan, clock, rate, onRate, keyboard = true }: Props) {
+export function Timeline({ plan, clock, rate, onRate: setRate, keyboard = true }: Props) {
   const t = useT();
+  const onRate = (r: number) => {
+    setRate(r);
+    track('rate_change', { rate: r });
+  };
   const { time, playing } = useClockState(clock);
   const pct = (x: number) => `${(x / plan.duration) * 100}%`;
   const marks = [...plan.phases, ...plan.events];

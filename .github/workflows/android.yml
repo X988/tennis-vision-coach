@@ -1,4 +1,4 @@
-name: Android APK
+name: Android
 
 on:
   push:
@@ -9,8 +9,15 @@ permissions:
   contents: write
 
 jobs:
-  apk:
+  build:
     runs-on: ubuntu-latest
+    env:
+      # Google Play needs a higher versionCode for every upload.
+      VERSION_CODE: ${{ github.run_number }}0
+      # Optional: set in Settings -> Secrets and variables -> Actions.
+      VITE_ANALYTICS_KEY: ${{ secrets.ANALYTICS_KEY }}
+      VITE_ANALYTICS_HOST: ${{ vars.ANALYTICS_HOST }}
+      VITE_SUPPORT_EMAIL: ${{ vars.SUPPORT_EMAIL }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -20,32 +27,55 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 21
           cache: gradle
       - run: npm ci
       - run: npm test
       - name: Build web app and sync it into the Android project
         run: npm run build:android
-      - name: Build debug APK
+
+      - name: Test APK (debug, installs next to nothing else, test key)
         working-directory: android
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
-      - name: Rename APK
-        run: cp android/app/build/outputs/apk/debug/app-debug.apk "TennisVisionCoach-${{ github.run_number }}-debug.apk"
+          cp app/build/outputs/apk/debug/app-debug.apk "../TennisVisionCoach-${{ github.run_number }}-test.apk"
       - uses: actions/upload-artifact@v4
         with:
-          name: TennisVisionCoach-apk
-          path: TennisVisionCoach-*-debug.apk
-      - name: Publish as a pre-release (direct download link)
+          name: test-apk
+          path: TennisVisionCoach-*-test.apk
+      - name: Publish the test APK as a pre-release (direct download link)
         if: github.event_name != 'pull_request'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: apk-${{ github.run_number }}
-          name: Tennis Vision Coach APK — сборка ${{ github.run_number }}
+          name: Tennis Vision Coach — тестовая сборка ${{ github.run_number }}
           prerelease: true
           target_commitish: ${{ github.sha }}
           body: |
-            Тестовая (debug) сборка для Android 5.1+ из коммита ${{ github.sha }}.
+            Тестовая сборка для Android 7.0+ из коммита ${{ github.sha }} (не для Google Play).
             Установка: скачайте APK на телефон и откройте его; разрешите «Установку из неизвестных источников».
-          files: TennisVisionCoach-*-debug.apk
+          files: TennisVisionCoach-*-test.apk
+
+      # Release bundle for Google Play: only when the upload key is configured
+      # (secrets ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD,
+      # ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD — see docs/RELEASE.md).
+      - name: Release bundle for Google Play (AAB)
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        if: env.KEYSTORE_B64 != ''
+        working-directory: android
+        run: |
+          echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+          export ANDROID_KEYSTORE_FILE="$RUNNER_TEMP/upload.jks"
+          ./gradlew bundleRelease --no-daemon
+          cp app/build/outputs/bundle/release/app-release.aab "../TennisVisionCoach-${{ github.run_number }}-release.aab"
+          rm -f "$RUNNER_TEMP/upload.jks"
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('TennisVisionCoach-*-release.aab') != ''
+        with:
+          name: google-play-aab
+          path: TennisVisionCoach-*-release.aab

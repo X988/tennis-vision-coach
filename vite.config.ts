@@ -2,6 +2,10 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import { readFileSync } from 'node:fs';
+
+const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as { version: string };
+process.env.VITE_APP_VERSION = pkg.version;
 
 // The Android app (Capacitor) ships all files inside the APK, so the service worker is not needed there.
 const isAndroid = process.env.BUILD_TARGET === 'android';
@@ -51,5 +55,6 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['src/**/*.test.ts'],
+    exclude: ['e2e/**', 'node_modules/**'],
   },
 });

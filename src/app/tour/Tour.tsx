@@ -1,7 +1,10 @@
 import { ReactNode, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { BackhandType, Handedness, Level } from '../../engines/profile';
 import { useT } from '../i18n';
+import { onBack } from '../platform/events';
 import { useStore } from '../store';
+import { analyticsConfigured, setConsent, track } from '../analytics/analytics';
+import { navigate } from '../router';
 import { useVoice } from '../voice/context';
 import { tourCue } from '../voice/narration';
 import { PRIORITY } from '../voice/speaker';
@@ -45,29 +48,49 @@ function visibleRect(el: HTMLElement) {
 }
 
 export function TourProvider({ children }: { children: ReactNode }) {
-  const { onboarding, setOnboarding } = useStore();
+  const { onboarding, setOnboarding, setPrivacy } = useStore();
   const [active, setActive] = useState(false);
   const [index, setIndex] = useState(0);
+  const indexRef = useRef(0);
+  indexRef.current = index;
 
   const start = useCallback(() => {
     setOnboarding({ welcomeSeen: true });
     setIndex(0);
     setActive(true);
+    track('tour_start');
   }, [setOnboarding]);
   const stop = useCallback(
     (completed: boolean) => {
       setActive(false);
       if (completed) setOnboarding({ tourDone: true });
+      track('tour_end', { completed, step: indexRef.current + 1, steps: TOUR_STEPS.length });
     },
     [setOnboarding],
   );
+  /** First launch: record the analytics answer before anything is tracked. */
+  const answerWelcome = useCallback(
+    (shareStats: boolean, startTour: boolean) => {
+      if (analyticsConfigured()) {
+        setPrivacy({ analytics: shareStats ? 'granted' : 'denied' });
+        setConsent(shareStats);
+      }
+      track('welcome', { action: startTour ? 'tour' : 'skip' });
+      if (startTour) start();
+      else setOnboarding({ welcomeSeen: true });
+    },
+    [setPrivacy, setOnboarding, start],
+  );
+  useEffect(() => {
+    if (active) track('tour_step', { step: index + 1, id: TOUR_STEPS[index].id });
+  }, [active, index]);
   const go = useCallback((i: number) => setIndex(Math.max(0, Math.min(TOUR_STEPS.length - 1, i))), []);
   const api = useMemo(() => ({ active, index, start, stop, go }), [active, index, start, stop, go]);
 
   return (
     <TourContext.Provider value={api}>
       {children}
-      {!onboarding.welcomeSeen && !active && <Welcome onStart={start} onSkip={() => setOnboarding({ welcomeSeen: true })} />}
+      {!onboarding.welcomeSeen && !active && <Welcome onAnswer={answerWelcome} />}
       {active && <TourOverlay index={index} go={go} stop={stop} />}
     </TourContext.Provider>
   );
@@ -86,9 +109,11 @@ function Seg<V extends string>({ value, options, onChange }: { value: V; options
 }
 
 /** First launch: what the app is, the two profile answers that change everything, and the offer of a tour. */
-function Welcome({ onStart, onSkip }: { onStart: () => void; onSkip: () => void }) {
+function Welcome({ onAnswer }: { onAnswer: (shareStats: boolean, startTour: boolean) => void }) {
   const t = useT();
   const { profile, setProfile } = useStore();
+  const [share, setShare] = useState(false);
+  useEffect(() => onBack(() => (onAnswer(share, false), true)), [onAnswer, share]);
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="welcome-title">
       <div className="modal">
@@ -108,11 +133,31 @@ function Welcome({ onStart, onSkip }: { onStart: () => void; onSkip: () => void 
           <Seg<Level> value={profile.level} onChange={(level) => setProfile({ level })} options={(['beginner', 'intermediate', 'advanced'] as const).map((v) => ({ v, label: t(`level.${v}`) }))} />
         </div>
         <p className="muted small">{t('welcome.note')}</p>
+        {analyticsConfigured() && (
+          <div className="consent">
+            <label className="check">
+              <input type="checkbox" checked={share} onChange={(e) => setShare(e.target.checked)} />
+              {t('privacy.consent')}
+            </label>
+            <p className="muted small">
+              {t('privacy.consentNote')}{' '}
+              <button
+                className="link"
+                onClick={() => {
+                  onAnswer(share, false);
+                  navigate({ name: 'privacy' });
+                }}
+              >
+                {t('privacy.title')}
+              </button>
+            </p>
+          </div>
+        )}
         <div className="actions">
-          <button className="primary" onClick={onStart}>
+          <button className="primary" onClick={() => onAnswer(share, true)}>
             {t('welcome.start')}
           </button>
-          <button onClick={onSkip}>{t('welcome.skip')}</button>
+          <button onClick={() => onAnswer(share, false)}>{t('welcome.skip')}</button>
         </div>
       </div>
     </div>
@@ -137,6 +182,17 @@ function TourOverlay({ index, go, stop }: { index: number; go: (i: number) => vo
     voice.say(tourCue(t, step.id), { priority: PRIORITY.tour });
   }, [step.id, voice, t]);
   useEffect(() => () => voice.stop(), [voice.stop]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // System back: previous step, or leave the tour from its first step.
+  useEffect(
+    () =>
+      onBack(() => {
+        if (index > 0) go(index - 1);
+        else stop(false);
+        return true;
+      }),
+    [index, go, stop],
+  );
 
   // Navigate to the step's screen.
   useEffect(() => {

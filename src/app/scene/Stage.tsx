@@ -1,4 +1,8 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useT } from '../i18n';
+import { hasWebGL, reportError } from '../platform/errors';
+import { SKY, useResolvedTheme } from '../theme';
+import { track } from '../analytics/analytics';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, PerformanceMonitor } from '@react-three/drei';
 import { SimulationClock } from '../../engines/clock';
@@ -31,7 +35,13 @@ interface StageProps {
  * (comparison mode); the clock is advanced outside, once per frame.
  */
 export function Stage({ plan, clock, view, layers, quality, markers, ghostPlan, label, tone, hideAnswer = false }: StageProps) {
+  const t = useT();
+  const sky = SKY[useResolvedTheme()];
   const [degraded, setDegraded] = useState(false);
+  // A weak phone can drop the GPU context (memory pressure, app switch): offer to restart the 3D view.
+  const [lost, setLost] = useState(false);
+  const [generation, setGeneration] = useState(0);
+  useEffect(() => setLost(false), [generation]);
   const low = quality === 'low' || (quality === 'auto' && degraded);
   const initial = viewFor(plan, view === 'free' ? 'back' : view)!;
   const ghost = ghostPlan === undefined ? plan : ghostPlan;
@@ -49,15 +59,32 @@ export function Stage({ plan, clock, view, layers, quality, markers, ghostPlan, 
 
   return (
     <div className={`stage ${tone ? `stage-${tone}` : ''}`} data-tour="stage">
+      {!hasWebGL() ? (
+        <div className="stage-message" role="alert">
+          <p>{t('state.noWebgl')}</p>
+        </div>
+      ) : (
       <Canvas
+        key={generation}
+        onCreated={({ gl }) => {
+          gl.domElement.addEventListener('webglcontextlost', (e) => {
+            e.preventDefault();
+            reportError('webgl', new Error('WebGL context lost'));
+            setLost(true);
+            setDegraded(true);
+          });
+        }}
         shadows={low ? false : 'soft'}
         dpr={low ? 1 : [1, 2]}
         camera={{ position: initial.pos.toArray(), fov: 45, near: 0.05, far: 200 }}
         gl={{ antialias: !low, powerPreference: 'high-performance' }}
       >
-        {quality === 'auto' && <PerformanceMonitor onDecline={() => setDegraded(true)} flipflops={2} />}
-        <color attach="background" args={['#0d1420']} />
-        <fog attach="fog" args={['#0d1420', 40, 85]} />
+        {quality === 'auto' && <PerformanceMonitor onDecline={() => {
+          setDegraded(true);
+          track('quality_degraded');
+        }} flipflops={2} />}
+        <color attach="background" args={[sky]} />
+        <fog attach="fog" args={[sky, 40, 85]} />
         <hemisphereLight args={['#eaf3ff', '#33402f', 0.75]} />
         <directionalLight position={[-8, 10, 12]} intensity={0.35} />
         <directionalLight
@@ -82,6 +109,15 @@ export function Stage({ plan, clock, view, layers, quality, markers, ghostPlan, 
         <Ball plan={plan} clock={clock} />
         <Overlays plan={plan} layers={layers} markers={markers} hideReply={hideAnswer} />
       </Canvas>
+      )}
+      {lost && (
+        <div className="stage-message" role="alert">
+          <p>{t('state.webglLost')}</p>
+          <button className="primary" onClick={() => setGeneration((g) => g + 1)}>
+            {t('state.restart3d')}
+          </button>
+        </div>
+      )}
       {label && <div className="stage-label">{label}</div>}
     </div>
   );

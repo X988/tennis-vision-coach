@@ -1,14 +1,23 @@
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { LangContext, useT } from './app/i18n';
 import { href, Route, useRoute } from './app/router';
-import { Constructor } from './app/screens/Constructor';
 import { Help } from './app/screens/Help';
+import { Privacy } from './app/screens/Privacy';
+import { AnalyticsBridge } from './app/analytics/Analytics';
+import { track } from './app/analytics/analytics';
 import { Home } from './app/screens/Home';
-import { Lesson } from './app/screens/Lesson';
 import { Library } from './app/screens/Library';
 import { ProfileScreen } from './app/screens/ProfileScreen';
 import { Progress } from './app/screens/Progress';
 import { StoreProvider, useStore } from './app/store';
+import { ErrorBoundary } from './app/platform/ErrorBoundary';
+import { ScreenError, ScreenLoading } from './app/screens/Fallbacks';
+import { SKY, useResolvedTheme } from './app/theme';
+import { setSystemBarsTheme } from './app/platform/native';
+
+// The 3D screens pull in three.js (~1 MB): load them on first use so the app opens fast.
+const Lesson = lazy(() => import('./app/screens/Lesson').then((m) => ({ default: m.Lesson })));
+const Constructor = lazy(() => import('./app/screens/Constructor').then((m) => ({ default: m.Constructor })));
 import { TourProvider } from './app/tour/Tour';
 import { useTour } from './app/tour/context';
 import { VoiceProvider, VoiceToggle } from './app/voice/Voice';
@@ -30,6 +39,7 @@ function Shell() {
   const tour = useTour();
   // Leaving a screen ends what was being said about it (the tour narrates across screens by itself).
   useEffect(() => {
+    track('screen_view', { screen: route.name });
     if (!tour.active) voice.stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route.name, route.name === 'lesson' ? `${route.id}/${route.mode}` : '']);
@@ -51,14 +61,19 @@ function Shell() {
         ))}
         <VoiceToggle />
       </nav>
-      <main className="content">
-        {route.name === 'home' && <Home />}
-        {route.name === 'library' && <Library />}
-        {route.name === 'lesson' && <Lesson key={route.id} id={route.id} mode={route.mode} />}
-        {route.name === 'constructor' && <Constructor />}
-        {route.name === 'progress' && <Progress />}
-        {route.name === 'profile' && <ProfileScreen />}
-        {route.name === 'help' && <Help />}
+      <main className="content" id="main">
+        <ErrorBoundary resetKey={window.location.hash} fallback={(retry) => <ScreenError onRetry={retry} />}>
+          <Suspense fallback={<ScreenLoading />}>
+            {route.name === 'home' && <Home />}
+            {route.name === 'library' && <Library />}
+            {route.name === 'lesson' && <Lesson key={route.id} id={route.id} mode={route.mode} />}
+            {route.name === 'constructor' && <Constructor />}
+            {route.name === 'progress' && <Progress />}
+            {route.name === 'profile' && <ProfileScreen />}
+            {route.name === 'help' && <Help />}
+            {route.name === 'privacy' && <Privacy />}
+          </Suspense>
+        </ErrorBoundary>
       </main>
     </div>
   );
@@ -66,11 +81,18 @@ function Shell() {
 
 function WithLanguage() {
   const { profile } = useStore();
+  const theme = useResolvedTheme();
   useEffect(() => {
     document.documentElement.lang = profile.language;
   }, [profile.language]);
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'light' ? '#ffffff' : SKY.dark);
+    setSystemBarsTheme(theme);
+  }, [theme]);
   return (
     <LangContext.Provider value={profile.language}>
+      <AnalyticsBridge />
       <VoiceProvider>
         <TourProvider>
           <Shell />

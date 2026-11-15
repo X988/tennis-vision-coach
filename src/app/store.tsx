@@ -6,86 +6,23 @@
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { get, set, del } from 'idb-keyval';
 import { AttemptRecord, ProgressSummary, summarize } from '../engines/feedback';
-import { DEFAULT_PROFILE, Profile } from '../engines/profile';
-import { CameraId, ScenarioSpec } from '../engines/scenario';
+import { Profile } from '../engines/profile';
+import { Layers, Onboarding, Persisted, Privacy, Settings, VoiceSettings, WorkingState, restore } from './persist';
 import { LIBRARY } from '../content/library';
 
-export type CameraView = CameraId | 'contact';
-export type Quality = 'auto' | 'high' | 'low';
-
-export interface Layers {
-  trail: boolean;
-  bounce: boolean;
-  footRoute: boolean;
-  ghost: boolean;
-  contactZone: boolean;
-  direction: boolean;
-}
-
-export interface Settings {
-  camera: CameraView;
-  layers: Layers;
-  quality: Quality;
-  rate: number;
-  voice: VoiceSettings;
-}
-
-export interface VoiceSettings {
-  enabled: boolean;
-  /** Speech rate, 1 = normal. */
-  rate: number;
-}
-
-export interface WorkingState {
-  lastLesson: { id: string; mode: string } | null;
-  draft: ScenarioSpec;
-}
+export type { CameraView, Consent, Layers, Onboarding, Privacy, Quality, Settings, Theme, VoiceSettings, WorkingState } from './persist';
 
 const STORAGE_KEY = 'tvc.state.v1';
 const PROGRESS_KEY = 'tvc.progress.v1';
 
-const DEFAULT_SETTINGS: Settings = {
-  camera: 'back',
-  layers: { trail: true, bounce: true, footRoute: true, ghost: true, contactZone: true, direction: true },
-  quality: 'auto',
-  rate: 1,
-  voice: { enabled: true, rate: 1 },
-};
-
-export interface Onboarding {
-  /** The first-launch welcome has been shown. */
-  welcomeSeen: boolean;
-  /** The guided tour has been completed at least once. */
-  tourDone: boolean;
-}
-
-interface Persisted {
-  profile: Profile;
-  settings: Settings;
-  working: WorkingState;
-  onboarding: Onboarding;
-}
-
 function loadPersisted(): Persisted {
-  const fallback: Persisted = {
-    profile: DEFAULT_PROFILE,
-    settings: DEFAULT_SETTINGS,
-    working: { lastLesson: null, draft: { ...LIBRARY.scenarios[0], id: 'CUSTOM_01', learning: { ...LIBRARY.scenarios[0].learning, coachApproved: false } } },
-    onboarding: { welcomeSeen: false, tourDone: false },
-  };
+  let raw: unknown = null;
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return fallback;
-    const p = JSON.parse(raw) as Partial<Persisted>;
-    return {
-      profile: { ...fallback.profile, ...p.profile },
-      settings: { ...fallback.settings, ...p.settings, layers: { ...fallback.settings.layers, ...p.settings?.layers }, voice: { ...fallback.settings.voice, ...p.settings?.voice } },
-      working: { ...fallback.working, ...p.working },
-      onboarding: { ...fallback.onboarding, ...p.onboarding },
-    };
+    raw = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null');
   } catch {
-    return fallback;
+    raw = null; // damaged JSON: start from defaults
   }
+  return restore(raw, LIBRARY.scenarios[0]);
 }
 
 interface Store extends Persisted {
@@ -97,6 +34,7 @@ interface Store extends Persisted {
   setVoice: (v: Partial<VoiceSettings>) => void;
   setWorking: (w: Partial<WorkingState>) => void;
   setOnboarding: (o: Partial<Onboarding>) => void;
+  setPrivacy: (p: Partial<Privacy>) => void;
   addAttempt: (a: AttemptRecord) => void;
   resetProgress: () => void;
 }
@@ -117,7 +55,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     get<AttemptRecord[]>(PROGRESS_KEY)
-      .then((v) => v && setProgress(v))
+      // Keep only well-formed records (an old or damaged entry must not break the Progress screen).
+      .then((v) => Array.isArray(v) && setProgress(v.filter((r) => r && typeof r.scenarioId === 'string' && Array.isArray(r.results) && typeof r.at === 'string')))
       .catch(() => undefined);
   }, []);
 
@@ -144,6 +83,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setLayers: (l) => setState((s) => ({ ...s, settings: { ...s.settings, layers: { ...s.settings.layers, ...l } } })),
       setVoice: (v) => setState((s) => ({ ...s, settings: { ...s.settings, voice: { ...s.settings.voice, ...v } } })),
       setWorking: (w) => setState((s) => ({ ...s, working: { ...s.working, ...w } })),
+      setPrivacy: (x) => setState((s) => ({ ...s, privacy: { ...s.privacy, ...x } })),
       setOnboarding: (o) => setState((s) => ({ ...s, onboarding: { ...s.onboarding, ...o } })),
       addAttempt,
       resetProgress,

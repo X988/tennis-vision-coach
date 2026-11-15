@@ -1,7 +1,7 @@
 {
   "name": "tennis-vision-coach",
   "private": true,
-  "version": "0.4.0",
+  "version": "0.5.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -13,12 +13,18 @@
     "test:watch": "vitest",
     "check": "npm run typecheck && npm run lint && npm test",
     "build:android": "BUILD_TARGET=android npm run build && cap sync android",
-    "apk": "npm run build:android && cd android && ./gradlew assembleDebug"
+    "apk": "npm run build:android && cd android && ./gradlew assembleDebug",
+    "e2e": "playwright test",
+    "build:ios": "npm run build && cap sync ios"
   },
   "dependencies": {
-    "@capacitor-community/text-to-speech": "^5.1.0",
-    "@capacitor/android": "^6.2.0",
-    "@capacitor/core": "^6.2.0",
+    "@capacitor-community/text-to-speech": "^8.0.2",
+    "@capacitor/android": "^8.6.2",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/core": "^8.6.2",
+    "@capacitor/ios": "^8.6.2",
+    "@capacitor/splash-screen": "^8.0.2",
+    "@capacitor/status-bar": "^8.0.4",
     "@react-three/drei": "^9.114.0",
     "@react-three/fiber": "^8.17.10",
     "idb-keyval": "^6.2.1",
@@ -28,8 +34,9 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@capacitor/cli": "^6.2.0",
+    "@capacitor/cli": "^8.6.2",
     "@eslint/js": "^9.39.5",
+    "@playwright/test": "^1.63.0",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
     "@types/three": "^0.168.0",

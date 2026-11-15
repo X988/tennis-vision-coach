@@ -1,6 +1,8 @@
 import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { useT } from '../i18n';
 import { useStore } from '../store';
+import { onBackground } from '../platform/events';
+import { track } from '../analytics/analytics';
 import { createBackend } from './backends';
 import { VoiceContext, useVoice } from './context';
 import { SayOptions, Speaker } from './speaker';
@@ -16,6 +18,7 @@ export function VoiceProvider({ children }: { children: ReactNode }) {
     if (!enabled) speaker.stop();
   }, [enabled, speaker]);
   useEffect(() => () => speaker.stop(), [speaker]);
+  useEffect(() => onBackground(() => speaker.stop()), [speaker]);
 
   const say = useCallback(
     (text: string, opts?: SayOptions) => {
@@ -44,6 +47,7 @@ export function VoiceToggle() {
       aria-label={on ? t('voice.turnOff') : t('voice.turnOn')}
       onClick={() => {
         setVoice({ enabled: !on });
+        track('voice_toggle', { on: !on });
         if (on) voice.stop();
       }}
     >

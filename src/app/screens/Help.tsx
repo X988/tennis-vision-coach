@@ -1,4 +1,10 @@
+import { useState } from 'react';
 import { useT } from '../i18n';
+import { clearErrorLog, diagnostics, errorLog } from '../platform/errors';
+import { platformName } from '../platform/native';
+
+const SUPPORT_EMAIL = (import.meta.env.VITE_SUPPORT_EMAIL as string | undefined) ?? '';
+const APP_VERSION = (import.meta.env.VITE_APP_VERSION as string | undefined) ?? 'dev';
 import { useTour } from '../tour/context';
 
 function Item({ icon, title, text }: { icon: string; title: string; text: string }) {
@@ -99,7 +105,49 @@ export function Help() {
           {fromTour('▤', 'card')}
         </ul>
       </section>
+      <ReportProblem />
       <p className="muted small">{t('disclaimer.coach')}</p>
     </div>
+  );
+}
+
+/** Copies app/device info and the recent errors (no personal data) to send to support. */
+function ReportProblem() {
+  const t = useT();
+  const [copied, setCopied] = useState(false);
+  const [count, setCount] = useState(() => errorLog().length);
+  const text = () => diagnostics({ app: `Tennis Vision Coach ${APP_VERSION}`, platform: platformName() });
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(text());
+      setCopied(true);
+    } catch {
+      window.prompt(t('report.copyManually'), text());
+    }
+  };
+  return (
+    <section className="card" data-tour="report">
+      <h3>{t('report.title')}</h3>
+      <p className="small muted">{t('report.text', { n: count })}</p>
+      <div className="actions">
+        <button onClick={copy}>{copied ? t('report.copied') : t('report.copy')}</button>
+        {SUPPORT_EMAIL && (
+          <a className="button-link" href={`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('Tennis Vision Coach ' + APP_VERSION)}&body=${encodeURIComponent(text())}`}>
+            {t('report.email')}
+          </a>
+        )}
+        {count > 0 && (
+          <button
+            className="link"
+            onClick={() => {
+              clearErrorLog();
+              setCount(0);
+            }}
+          >
+            {t('report.clear')}
+          </button>
+        )}
+      </div>
+    </section>
   );
 }

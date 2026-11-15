@@ -3,10 +3,11 @@ import { useT } from '../i18n';
 import { navigate } from '../router';
 import { useStore } from '../store';
 import { useTour } from '../tour/context';
+import { analyticsConfigured, setConsent } from '../analytics/analytics';
 
 export function Home() {
   const t = useT();
-  const { summary, working, onboarding } = useStore();
+  const { summary, working, onboarding, privacy, setPrivacy, profile } = useStore();
   const tour = useTour();
   const all = LIBRARY.scenarios;
   const done = all.filter((s) => summary.perScenario[s.id]?.bestAllGood).length;
@@ -20,6 +21,20 @@ export function Home() {
         <h1>{t('app.title')}</h1>
         <p className="muted">{t('app.tagline')}</p>
       </section>
+      {analyticsConfigured() && onboarding.welcomeSeen && privacy.analytics === 'unset' && (
+        <section className="card offer">
+          <p>{t('privacy.ask')}</p>
+          <div className="actions">
+            <button className="primary" onClick={() => (setPrivacy({ analytics: 'granted' }), setConsent(true))}>
+              {t('privacy.allow')}
+            </button>
+            <button onClick={() => setPrivacy({ analytics: 'denied' })}>{t('privacy.deny')}</button>
+            <button className="link" onClick={() => navigate({ name: 'privacy' })}>
+              {t('privacy.title')}
+            </button>
+          </div>
+        </section>
+      )}
       {!onboarding.tourDone && (
         <section className="card offer">
           <p>{t('tour.offer')}</p>
@@ -36,7 +51,7 @@ export function Home() {
         {last && (
           <button className="big" onClick={() => navigate({ name: 'lesson', id: last.id, mode: last.mode as 'decide' })}>
             <strong>{t('home.continue')}</strong>
-            <span>{LIBRARY.scenarios.find((s) => s.id === last.id)?.title.ru}</span>
+            <span>{(() => { const s = LIBRARY.scenarios.find((x) => x.id === last.id); return s ? (s.title[profile.language] ?? s.title.ru) : ''; })()}</span>
           </button>
         )}
         <button className="big" data-tour="home-quick" onClick={() => navigate({ name: 'lesson', id: all[Math.floor(Math.random() * all.length)].id, mode: 'decide' })}>

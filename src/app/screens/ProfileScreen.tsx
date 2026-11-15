@@ -1,7 +1,9 @@
 import { BackhandType, Handedness, Language, Level } from '../../engines/profile';
 import { LANGUAGES, useT } from '../i18n';
-import { Quality, useStore } from '../store';
+import { Quality, Theme, useStore } from '../store';
 import { Slider } from '../ui/Slider';
+import { navigate } from '../router';
+import { track } from '../analytics/analytics';
 import { useVoice } from '../voice/context';
 import { PRIORITY } from '../voice/speaker';
 
@@ -19,7 +21,11 @@ function Seg<V extends string>({ value, options, onChange }: { value: V; options
 
 export function ProfileScreen() {
   const t = useT();
-  const { profile, setProfile, settings, setSettings, setVoice } = useStore();
+  const { profile, setProfile: saveProfile, settings, setSettings, setVoice } = useStore();
+  const setProfile = (p: Parameters<typeof saveProfile>[0]) => {
+    saveProfile(p);
+    for (const [field, value] of Object.entries(p)) track('profile_change', { field, value: field === 'heightCm' ? Math.round(Number(value) / 5) * 5 : String(value) });
+  };
   const voice = useVoice();
   return (
     <div className="page narrow">
@@ -36,6 +42,16 @@ export function ProfileScreen() {
         <p className="muted small">{t('profile.note')}</p>
         <label>{t('profile.language')}</label>
         <Seg<Language> value={profile.language} onChange={(language) => setProfile({ language })} options={LANGUAGES.map((l) => ({ v: l.id, label: l.label }))} />
+        <label>{t('profile.theme')}</label>
+        <Seg<Theme>
+          value={settings.theme}
+          onChange={(theme) => setSettings({ theme })}
+          options={[
+            { v: 'auto', label: t('profile.themeAuto') },
+            { v: 'dark', label: t('profile.themeDark') },
+            { v: 'light', label: t('profile.themeLight') },
+          ]}
+        />
         <label>{t('profile.quality')}</label>
         <Seg<Quality>
           value={settings.quality}
@@ -64,6 +80,10 @@ export function ProfileScreen() {
         ) : (
           <p className="muted small">{t('voice.unsupported')}</p>
         )}
+        <label>{t('profile.privacy')}</label>
+        <div className="actions">
+          <button onClick={() => navigate({ name: 'privacy' })}>{t('profile.privacyLink')}</button>
+        </div>
       </div>
     </div>
   );

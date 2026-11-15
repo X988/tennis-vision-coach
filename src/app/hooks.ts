@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { onBackground } from './platform/events';
 import { SimulationClock } from '../engines/clock';
 import { Plan, PlanOptions, buildPlan } from '../engines/plan';
 import { Profile } from '../engines/profile';
@@ -20,7 +21,12 @@ export function useClock(duration: number, rate: number) {
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    // Leaving the app pauses playback, so nothing runs (or speaks) unseen.
+    const off = onBackground(() => clock.pause());
+    return () => {
+      cancelAnimationFrame(raf);
+      off();
+    };
   }, [clock]);
   return clock;
 }
