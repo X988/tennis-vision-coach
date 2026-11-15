@@ -3,7 +3,7 @@ import { LangContext, useT } from './app/i18n';
 import { href, Route, useRoute } from './app/router';
 import { Help } from './app/screens/Help';
 import { Privacy } from './app/screens/Privacy';
-import { AnalyticsBridge } from './app/analytics/Analytics';
+import { AnalyticsBridge } from './app/analytics/AnalyticsBridge';
 import { track } from './app/analytics/analytics';
 import { Home } from './app/screens/Home';
 import { Library } from './app/screens/Library';
