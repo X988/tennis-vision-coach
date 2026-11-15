@@ -21,7 +21,8 @@ test.describe('first launch', () => {
       }
       // Every explanation step highlights a real control on screen (except the final one).
       const last = await card.getByRole('button', { name: /Готово/ }).isVisible();
-      if (!last) await expect(page.locator('.tour-ring')).toBeVisible();
+      const title = await card.locator('h3').textContent();
+      if (!last) await expect(page.locator('.tour-ring'), `step «${title}» highlights a control`).toBeVisible();
       await card.locator('.tour-actions button.primary').click();
       if (last) break;
     }

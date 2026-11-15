@@ -175,6 +175,7 @@ function TourOverlay({ index, go, stop }: { index: number; go: (i: number) => vo
   const [cardPos, setCardPos] = useState<{ left: number; top: number } | null>(null);
   const card = useRef<HTMLDivElement>(null);
   const scrolled = useRef(false);
+  const lastScroll = useRef(0);
   const voice = useVoice();
 
   // Read the step aloud; stop talking when the tour closes.
@@ -209,10 +210,19 @@ function TourOverlay({ index, go, stop }: { index: number; go: (i: number) => vo
     const tick = () => {
       const el = step.target ? findTarget(step.target) : null;
       if (el) {
-        if (!scrolled.current) {
+        // Bring the target into view at the start of the step, and again
+        // whenever it has slipped out of view (content above it changed
+        // height, the panel re-rendered, the phone was rotated...).
+        const full = el.getBoundingClientRect();
+        const seen = visibleRect(el);
+        const seenArea = Math.max(0, seen.right - seen.left) * Math.max(0, seen.bottom - seen.top);
+        const outOfView = seenArea < Math.min(full.width * full.height * 0.3, 2000);
+        const now = performance.now();
+        if (!scrolled.current || (outOfView && now - lastScroll.current > 400)) {
           scrolled.current = true;
+          lastScroll.current = now;
           // Tall blocks start at the top of their panel; small controls are centred.
-          el.scrollIntoView({ block: el.getBoundingClientRect().height > window.innerHeight * 0.45 ? 'start' : 'center', inline: 'nearest' });
+          el.scrollIntoView({ block: full.height > window.innerHeight * 0.45 ? 'start' : 'center', inline: 'nearest' });
         }
         const r = visibleRect(el);
         const next = { x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.right - r.left), h: Math.round(r.bottom - r.top) };
